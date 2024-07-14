@@ -5,6 +5,8 @@ It allows us to keep oursevles within only PHP code instead of switching between
 This ORM work with **PHP core** and **other frameworks** though other framworks like laravel have their own ORMs.
 **DiteORM** uses functions and classes to generate the right sql which is needed. This means sometimes you have to adjust the setting in the php.ini to fit the database you are using.
 
+<!-- install -->
+
 ## Installation.
 
 This can be done using one of this two ways;
