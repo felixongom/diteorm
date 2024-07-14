@@ -1,0 +1,19 @@
+{
+    "name": "ongom/dite-orm",
+    "description": "A PHP ORM, for interacting with the different kind of relational database.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Dite\\": "src/Code"
+        }
+    },
+    "authors": [
+        {
+            "name": "ongom felix"
+        }
+    ],
+    "minimum-stability": "stable", 
+    "keywards":["Dite", "ORM", "Data mapper", "Dyte", "Object relational mapper"] 
+
+}
