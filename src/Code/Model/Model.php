@@ -203,19 +203,18 @@ class Model{
         // 
         $max_id = $isSqlite?self::autoincreamentId($table_name, $conn,  $isSqlite):'';
         $values = array_values($data);// get values
-        if($isSqlite){
-            $sqliteValues = [];
-            foreach ($values as $one_value) {
-                if($one_value===false){
-                    $sqliteValues =[...$sqliteValues, 0];
-                }elseif($sqliteValues === true){
-                    $sqliteValues =[...$sqliteValues, 1];
-                }else{
-                    $sqliteValues =[...$sqliteValues, $one_value];
-                }
+        // chang the boolean values
+        $sqliteValues = [];
+        foreach ($values as $one_value) {
+            if($one_value==false || $one_value===0){
+                $sqliteValues = [...$sqliteValues, 0];
+            }elseif($sqliteValues == true || $one_value===1){
+                $sqliteValues = [...$sqliteValues, 1];
+            }else{
+                $sqliteValues = [...$sqliteValues, $one_value];
             }
-            $values = $sqliteValues;
         }
+        $values = $sqliteValues;
         // 
         $qnmarks = null; 
         $columns = null;
