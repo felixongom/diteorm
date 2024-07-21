@@ -81,9 +81,18 @@ class QueryBuilder{
             $this->matchOr($andArray, 'and');
             $this->matchOr($norArray, 'nor');
             $this->matchOr($nandArray, 'nand');
-
         }
+        // 
+        $this->WHERE = trim($this->WHERE);
+        // removing unnneccesary trailing "AND )" and "OR )"
         $this->WHERE = str_replace('( OR', '(', $this->WHERE);
+        $this->WHERE = str_replace('OR  )', ')', $this->WHERE);
+        $this->WHERE = str_replace('AND  )', ')', $this->WHERE);
+        // removing unnneccesary trailing "AND"
+        $last_3_charactors = substr($this->WHERE, strlen($this->WHERE) - 3, strlen($this->WHERE));
+        if($last_3_charactors ==='AND'){
+            $this->WHERE = substr($this->WHERE, 0, strlen($this->WHERE) - 3);
+        }
         return str_replace("WHERE AND", "WHERE", $this->WHERE);
     }
 
