@@ -83,6 +83,7 @@ class QueryBuilder{
             $this->matchOr($nandArray, 'nand');
 
         }
+        $this->WHERE = str_replace('( OR', '(', $this->WHERE);
         return str_replace("WHERE AND", "WHERE", $this->WHERE);
     }
 
@@ -333,7 +334,6 @@ class QueryBuilder{
         $result_generated = str_replace("AND AND", "AND", $result_generated);
         $result_generated = str_replace("OR OR", "OR", $result_generated);
         $result_generated = str_replace("BETWEEN ? OR ?", "BETWEEN ? AND ?", $result_generated);
-        
         //checking if the it is and or nand inorder to nagate
         if($key_type==='nor' || $key_type==="nand"){
             $result_generated="NOT ( $result_generated )";
@@ -343,11 +343,12 @@ class QueryBuilder{
         //attach it to $this->WHERE
         if($this->WHERE === null){
             $this->WHERE = "WHERE $result_generated";
+            
         }else{
             $this->WHERE .= " AND $result_generated";  
         }
     }
-
+    
     //matching the associative aray in the $or and $and
     public function matchOrAndArray(array $result_Of_innerArray){
         if(count(array_keys($result_Of_innerArray))===0) return '';
