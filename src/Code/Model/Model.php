@@ -273,7 +273,7 @@ class Model{
         return $res;
     } 
     //updates records all the record
-     public static function update(int|string $where_selector, array $values_to_set):array{
+     public static function update(int|string $where_selector, array $values_to_set){
         return self::doUpdate($where_selector, $values_to_set);
     } 
     //updats records all the record
@@ -575,7 +575,7 @@ class Model{
     }
     
     //relationship has one function
-    public function hasOne(string $ref_table):array{
+    public function hasOne(string $ref_table){
         $maker = self::maker();
         $parent_col = $maker->builder->idColName($maker->table_name);
         // 
@@ -588,7 +588,7 @@ class Model{
         return $results??[];
     }
     //relationship belongs to function
-    public function belongsToOne(string $ref_table):array{
+    public function belongsToOne(string $ref_table){
         $maker = self::maker();
         $ref_col = $maker->builder->idColName($ref_table);
         $this->sql = "SELECT * FROM $ref_table WHERE $ref_col = ? LIMIT 1";
