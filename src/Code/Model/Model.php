@@ -61,7 +61,7 @@ class Model{
     public static function drop():bool{
         try{
             $maker = self::maker();
-            $sql = "DROP TABLE ?";
+            $sql = "DROP TABLE $maker->table_name";
             // 
             $stmt = $maker->instance->connect()->prepare($sql);
             $stmt->execute([$maker->table_name]);
