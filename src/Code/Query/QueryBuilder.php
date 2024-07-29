@@ -23,7 +23,8 @@ class QueryBuilder{
 
     //* ***************************************************************************************
     //setting values for updating
-    public function where(string $table_name=null,  array|int $where_selector = []){
+    public function where(string $table_name = null,  array|int|null $where_selector = []){
+        $where_selector = $where_selector===null?[]:$where_selector;
         //case of interger value
         if(is_int($where_selector)){
             $this->whereSetId($table_name);

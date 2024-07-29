@@ -72,7 +72,7 @@ class Model{
         }
     }
     //fetches all the record
-     public static function all(array $where_selector=[], array|string $select = '*'){
+     public static function all(array|null $where_selector = [], array|string $select = '*'){
         $maker = self::maker($where_selector, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where";
         // 
@@ -96,7 +96,7 @@ class Model{
         return $result;
     }
     //fatches on record that matches the query
-    public static function findOne(array $where_selector=[], array|string $select = '*'){
+    public static function findOne(array|null $where_selector=[], array|string $select = '*'){
         $maker = self::maker($where_selector, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where LIMIT 1";
         // 
@@ -108,7 +108,7 @@ class Model{
         return $result;
     }
     //fetches the last record that matches the query
-    public static function last(array $where_selector = [], array|string $select = '*'){
+    public static function last(array|null $where_selector = [], array|string $select = '*'){
         $maker = self::maker($where_selector, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY {$maker->builder->idColName($maker->table_name)} DESC LIMIT 1";
         // 
@@ -120,7 +120,7 @@ class Model{
         return $result;
     }
     //fetches the first record that matches the query
-    public static function first(array $where_selector = [], array|string $select = '*'){
+    public static function first(array|null $where_selector = [], array|string $select = '*'){
         $maker = self::maker($where_selector, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY {$maker->builder->idColName($maker->table_name)} LIMIT  1";
         // 
@@ -162,7 +162,7 @@ class Model{
         self::doDelete($where_selector);
      }
     //count records
-    public static function countRecords(array $where_selector = [], array|string $column = '*'):int{
+    public static function countRecords(array|null $where_selector = [], array|string $column = '*'):int{
         $maker = self::maker($where_selector);
         $sql = "SELECT COUNT($column) AS total FROM $maker->table_name $maker->where";
         // 
@@ -326,7 +326,7 @@ class Model{
     // ******************************************************************************************
     // ******************************************************************************************
     // non static methods
-    public function find(array $where_selector=[]){
+    public function find(array|null $where_selector=[]){
         $maker = self::maker($where_selector);
         //getting the table name for both Modal instanse ans the custom model extnding
         $table_name = $this->passed_table_name?: $maker->table_name;
@@ -356,7 +356,7 @@ class Model{
         return $this;
     }
     // non static methods to paginate
-    public function paginate(array $where_selector = []){
+    public function paginate(array|null $where_selector = []){
         $maker = self::maker($where_selector);
         //getting the table name for both Modal instanse ans the custom model extnding
         $table_name = $this->passed_table_name?: $maker->table_name;
