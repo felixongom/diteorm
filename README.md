@@ -689,7 +689,7 @@ $users = User::find()
 $users = User::find()
         ->groupBy('age')
         ->get()
-//select name as names_of_staffs', 'age', "COUNT(name) as total from user group by age where name = john.
+//SELECT name as names_of_staffs', 'age', "COUNT(name) as total from user group by age where name = john.
 $users = User::
         ->find()
         ->where(['name'=>'john'])
@@ -828,8 +828,8 @@ $users = User::paginate(["first_name" = "mike"])
 This will require you to pass the name of the toble you are joining and the condition on which you are joining
 ``` php
 $users = User::find()
-        ->joinOn('post')
-        ->leftJoinOn('comment') //optional 
+        ->joinOn('post', 'user.user_id = post.user_id')
+        ->leftJoinOn('comment','post.post_is = comment.coment_id') //optional 
         ->select('user.username, post.post')
         ->where(['user.first_name'=>'tom','user.age'=>[':gt'=>18]]) //optional
         ->get()
