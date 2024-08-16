@@ -764,17 +764,27 @@ The above query will return something like below
 ### Using Model class to query data.
 Pass the name of the table to the model constrctor if you want to query using the Model class
 ```php
-  $Posts = Model::find('Post')->get()
+  class DB extends Model{}
+  $Post = DB::table('Post')->get()
+  // OR
+  $Posts = Model::table('Post')->get()
+  
   // 
-  $users = Model::find('user')->select('name')->get()
+  $users = DB::table('user')->select('name')->get()
   // find
-  $users = Model::find('user')
+  $users = Model::table('user')
           ->limit(10)
           ->offset(5)
           ->select('name')
           ->get()
   // paginating
-  $users = Model::paginate('post')
+  $users = Model::ptable('post')
+          ->page(10)
+          ->perpage(5)
+          ->select('title')
+          ->get()
+// OR
+$users = DB::Ptable('post')
           ->page(10)
           ->perpage(5)
           ->select('title')
@@ -800,7 +810,7 @@ You can join over 20 differnt tables together using any of the above types of jo
 and apply pagination, select, border by , etc like below
 
 ```php
-$users = $User::paginate(["first_name" = "mike"])
+$users = User::paginate(["first_name" = "mike"])
         ->join('post')
         ->leftJoin('comments')
         ->page(1)
