@@ -851,6 +851,8 @@ The where clause is passed as a parameter in the following methods.
 
 you can also chain the where() method on the following methods
 - ::find()
+- ::table()
+- ::Ptable()
 - ::paginate()
 - ::findBypk()
 
