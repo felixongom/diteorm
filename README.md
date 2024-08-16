@@ -500,7 +500,7 @@ All static methods without chaining functionality that are used for reading reco
 The fields you want back can be passed as comma separated string value of the columns you want back **OR** as an array of all the feilds you want back. As shown below
  ```php
 //get all the records from the table user
-$user = User::all(null, 'name, email');
+$user = User::all([], 'name, email');
 
 ////get all the records from the  user table where age >  30
 $user = User::all(["age"=>[":gt"=>30]], ['name', 'email']);
