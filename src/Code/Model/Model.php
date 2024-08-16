@@ -47,6 +47,7 @@ class Model{
         $genResult['where'] = $builder->where($table_name, $where_selector);
         $genResult['prepared_values'] = $builder->getPreparedValues();
         $genResult['star'] = self::selector($select);
+        $instance = null;
         return (object) $genResult;
     }
     // ******************************************************************************************
@@ -76,7 +77,7 @@ class Model{
         }
     }
     //fetches all the record
-     public static function all(array $where_selector=[], array|string $select = '*'){
+     public static function all(array $where_selector = [], array|string $select = '*'){
         $maker = self::maker($where_selector, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where";
         // 
@@ -588,9 +589,11 @@ class Model{
             }else{
 
                 $results = $stmt->fetchAll($instance->fetchMode());
+
                 }
             }
         $instance->debargPrint($this->sql, $this->prepared_values, null, true);
+        $instance = null;
         return !$results?[]:$results;
     }  
     private function countTotal(string $sql):int{
