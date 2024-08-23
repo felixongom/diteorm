@@ -62,10 +62,11 @@ RUN_SCHEMA = 1
 
 **_Other configarations that can be added to .env file._**
 
-```php
+```bush
 LOGGER = 1
 FETCH_MODE = std_array
 RUN_SCHEMA = 1
+SQL_COLOR = green
 ```
 
 - **LOGGER** is for debuging purpose.
@@ -74,6 +75,7 @@ RUN_SCHEMA = 1
 - **RUN_SCHEMA.** When you try to create the table using the Schema, the table will not be created, to solve this add RUN_SCHEMA = 1 to the .env file. After creating the tables you can turn the value 0 (RUN_SCHEMA = 0) or remove it completely to avoid rerunning the queries for creating the table again. When you add any new tables, you will have to turn it back to 1 and again run the code.
 - **FETCH_MODE** defines how the records are going to be fetched from the database.
   - std_arrays means that the records will be fetched as a php standard array whose values can be access as shown bellow.
+- **SQL_COLOR** definds the color of sql keywords when printing to the screen.
 ```php
 $user = ["name"=>"tom", "age"=>36];
 $user["name"]; //tom
