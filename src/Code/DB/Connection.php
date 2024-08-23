@@ -137,15 +137,32 @@ class Connection
         if(array_key_exists('LOGGER', $this->env) && $this->env['LOGGER']==1){
             $val =  json_encode($PREPARED_VALUE);
             $check_many = $many ?$val:"[$val]";
-            $sql = $SQL===null?'':"<div>sql = $SQL<div> <br>";
+            $sql = $SQL===null?'':"<div>sql = {$this->colorfullSql($SQL)}<div> <br>";
             $value = $PREPARED_VALUE===null?"":"<div>values = $check_many</div>";
             $mess = $messege===null?"":"<div>messege = $messege<div><br>";
             $hr = ($SQL!==null || $PREPARED_VALUE!==null || $messege !==null)?"<hr style='background-color: #333; height:2px;border:none'>":'';
             // 
             echo("
-                <div style='background-color: black; color:#e6e6e6 ; padding:15px 5px; font-family:tahoma'>
+                <div style='background-color: #101720; color:#e6e6e6 ; padding:15px 5px; font-family:tahoma'>
                     $mess $sql $value $hr
                 </div>");
         }
+    }
+
+    //
+    private function colorfullSql($sql){
+        $key_words = [' DATABASE  ',' DROP ',' ALTER ', ' COLUMN ',' PIMARY ',' FOREIGN ', ' REFERENCES  ',' KEY ',' CONSTRAINT ',' ADD ',' CHECK ',' ADD ',' DEFAULT ',
+        'SELECT ', ' FROM ',' WHERE ', ' JOIN ',' LEFT JOIN ',' RIGHT JOIN ',' INNER JOIN ', ' FULL OUTER JOIN ', ' ON ', ' LIMIT ', ' OFFSET ',
+        ' CREATE ',' TABLE ',' LIKE ',' AS ',' TOP ',' DELETE ',' UPDATE ',' SET ',' IS ',' NOT ',' UNIQUE ',' NULL ',' INSERT ',' INTO ',' VALUES ',' GROUP ',' ORDER ',' HAVING '
+        ,' ORDER ', ' BY ',' DSC ',' DESC ',' AND ',' OR ',' NOT ',' COUNT ',' DISTINCT ',' IN ',' BETWEEN ',' EXIST ',' ALL ',' ANY ',' COALESCE '];
+        // 
+        $sql_color = null;
+        if(array_key_exists('SQL_COLOR', $this->env())){
+            $sql_color = $this->env()['SQL_COLOR']?? '#e600ac';
+        }
+        foreach ($key_words as $key_word) {
+            $sql = str_replace($key_word, " <span style='color:$sql_color;'>$key_word</span> ", $sql);
+        }
+        return $sql;
     }
 }

@@ -595,7 +595,7 @@ There are several ways of joining two tables.
   This two methods do the same thing , they will inner join the two the tables.
 
 ```php
-$user = User::joins(Post::class);
+$user = User::joins(Post::class,);
 //OR
 $user = User::joins("Post");
 //select * from user join post on user.user_id = post.user_id
@@ -690,8 +690,7 @@ $users = User::find()
         ->groupBy('age')
         ->get()
 //SELECT name as names_of_staffs', 'age', "COUNT(name) as total from user group by age where name = john.
-$users = User::
-        ->find()
+$users = User::find()
         ->where(['name'=>'john'])
         ->select('name, age')
         ->groupBy('name')
@@ -735,10 +734,10 @@ Pagination helps to query only a slice of records from the database. It has two 
 
 - page() - Takes in the page you want
 - perpage() - Takes number of records for each page.
-Paginate take in an optional where clause as the parameter in form of arrays Or you can also chain the where() method on it.
+
 
 ```php
-$users = User::paginate()
+$users = User::find()
         ->page(3)
         ->perpage(5)
         ->where(['first_name'=>'tom','age'=>[':gt'=>18]])
@@ -757,6 +756,7 @@ The above query will return something like below
   'next_page' => null; //what next page is, null for no next page
   'prev_page' => 1; //what next page is, null for no next page
   'per_page' => 10; //number of records per page
+  'position' => 1; //position of the first record of a page in the entire result
   'data' = [...]; // records for each page
 ]
 ```
@@ -777,14 +777,15 @@ Pass the name of the table to the model constrctor if you want to query using th
           ->offset(5)
           ->select('name')
           ->get()
+
   // paginating
-  $users = Model::ptable('post')
+  $users = Model::table('post')
           ->page(10)
           ->perpage(5)
           ->select('title')
           ->get()
 // OR
-$users = DB::Ptable('post')
+$users = DB::table('post')
           ->page(10)
           ->perpage(5)
           ->select('title')
@@ -810,18 +811,19 @@ You can join over 20 differnt tables together using any of the above types of jo
 and apply pagination, select, border by , etc like below
 
 ```php
-$users = User::paginate(["first_name" = "mike"])
+$users = User::find()
         ->join('post')
         ->leftJoin('comments')
         ->page(1)
         ->perpage(10)
         ->orderBy('user.name'=>'desc')
         ->select(['user.name', 'post.title', 'count(*) As total'])
+        ->where(["first_name" = "mike"])
         ->get()
 ```
 
-- **paginate(), find() and findBypk can not be chained together, you will get an error**
-- **paginate() method limits the result with page() and perpage() methods**
+- **find(), find() and findBypk can not be chained together, you will get an error**
+- **find() method limits the result with page() and perpage() methods**
 - **find() method limits the result with limit() and skip()/offset() methods**
 
 ### joinOn
@@ -852,9 +854,9 @@ The where clause is passed as a parameter in the following methods.
 you can also chain the where() method on the following methods
 - ::find()
 - ::table()
-- ::Ptable()
-- ::paginate()
+- ::find()
 - ::findBypk()
+- ::hasMany()
 
 **It can be passed in the following ways**
 
@@ -1094,109 +1096,37 @@ There are three types of relationships you can use here,
 
 #### 1. One To One relationship.
 
-In all types of relationship including **One To One relationship**.
-I have a users table and a creditCards table. One user has one credit card and a credit card belongs to one user.
+One user has one credit card and a credit card belongs to one user.
 To establish a **One To One relationship** here , you have to create one function in the Users class and CreditCards calss defination as shonw below.
 
 ```php
+ $card = User::findByPk(4)
+        ->hasOne(CreditCard::class)
+        ->get()
+// returns one creditcard or false
 
-class Users extends Model{
-
-  public function __construct() {
-    Schema::create(Users::class, function(Table $table){
-      $table->id();
-      $table->string('name');
-      $table->string('email');
-    });
-  }
-
-  public function creditCards(){
-    return $this->hasOne(CreditCards::class);
-  }
-}
-
-//
-
-class CreditCards extends Model{
-
-  public function __construct() {
-    Schema::create(CreditCards::class, function(Table $table){
-      $table->id();
-      $table->boolean('CreditCards');
-    });
-  }
-  // 
-  public function users(){
-    return $this->belongsToOne(Users::class);
-  }
-}
+//and also
+ $card = CreditCards::findByPk(4)
+        ->belongsToOne(User::class)
+        ->get()
+// returns one user or false
 ```
-
-**If** you have created your database using some other software, the above code can reduce to only this one below. 
-
-```php
-
-class Users extends Model{
-  public function creditCards(){
-    return $this->hasOne(CreditCards::class);
-  }
-}
-// 
-class CreditCards extends Model{
-  public function users(){
-    return $this->belongsToOne(Users::class);
-  }
-}
-```
-To use this, you have to do the following.
-```php
-$creditCards = new CreditCards();
-
-$card = User::findByPk(2)->creditCards();
-//returns the card details of that user whose id is 2
-
-$use = CreditCard::findByPk(5)->user();
-//returns the details of the user who own a card with id 5
-```
-The setup is similar for other type of relationship.
-For other relationships i will assume you have created the database using other softwares.
 
 #### 2. One To Many relationship.
 
 The code will be as below.
 ```php
-class Users extends Model{
-  public function posts(){
-    return $this->hasMany(Posts::class);
-  }
+$card = User::findByPk(4)
+        ->hasMany(Post::class)
+        ->get()
+// returns array of post records
 
-  //OR 
-  
-  //if you want to get specific kind of posts that belong to this user, defind the method 
-  //as shown below
-  public function posts(array|string|int $where_selector = []){
-    return $this->hasMany(Posts::class, $where_selector);
-  }
-}
-// 
-class Posts extends Model{
-  public function users(){
-    return $this->belongsToOne(Users::class);
-  }
-}
+// and also
+$Post = Post::findByPk(4)
+        ->belongsToOne(User::class)
+        ->get()
+// returns a user or false
 ```
-To use this, you have to do the following.**Dont't add the get() in this case**
-```php
-$users = User::findByPk(2)->posts();
-//returns the card details of that user whose id is 2
-
-//for specific kind of post that belongs to the user
-$users= User::findByPk(1)->posts(["tile"=>"news update"])
-
-$posts = Post::findByPk(5)->user();
-//returns the details of the user who own a card with id 5
-```
-
 #### 3. Many To Many relationship.
 
 This will only work if you had created an intermediate table for the two tables.
@@ -1242,84 +1172,20 @@ Each time you create a teacher or a course remember to update the intermediate t
 **Let's** define the relationship.
 
 ```php
-//Teachers table
-class Teachers extends Model{
-  
-  public function __construct() {
-    Schema::create(Teachers::class, function(Table $table){
-      $table->id();
-      $table->string('teacher_name');
-      $table->string('email');
-    });
-  }
-  // 
-  public function courses(){
-    return $this->hasManyMany(Courses::class);
-  }
-
-  //OR 
-  
-  //if you want to get specific kind of courses that belong to this user, defind the method 
-  //as shown below
-   public function courses(array|string|int $where_selector = []){
-        return $this->hasMany(Courses::class, $where_selector);
-    }
-}
-
-//Courses table
-class Courses extends Model{
-
-  public function __construct() {
-      Schema::create(Courses::class, function(Table $table){
-        $table->id();
-        $table->string('course_name');
-      });
-    }
-  // 
-  public function teacher(){
-    return $this->hasManyMany(Teachers::class);
-  }
-}
-//Intermediate table
-class Teachers_Courses extends Model{
-
-  public function __construct() {
-    Schema::create(Teachers_Courses::class, function(Table $table){
-      $table->id();
-      $table->foriegnKey('courses_id');
-      $table->foriegnKey('teachers_id');
-    });
-  }
-
-}
+ $card = Teacher::findByPk(4)
+        ->hasManyMany(Courses::class)
+        ->get()
+// returns one user or false
 ```
-
-**If** you have created your database using other software, the above will reduce to the code below.
-
+***NB*** On to any relationship, you can chain any valid method chain exept ->findByPk()
 ```php
-//Teachers table
-class Teachers extends Model{
-    
-  public function courses(){
-   return $this->hasManyMany(Courses::class);
-  }
-}
-//Courses table
-class Courses extends Model{
-    
-  public function teachers(){
-    return $this->hasManyMany(Teachers::class);
-  }
-
-}
-```
-To use it You will have to do this.
-```php
-
-$courses = Teachers::findByPk(2)->courses(["courese.name"=>"computer science"]);
-//returns all the courses that a teacher with id 2 is teaching
-$teachers = Courses::findByPk(12)->teachers("teacher.name"=>"Tom");
-//returns all the teachers teaching a course with id 12
+$post = Users::findByPk(2)
+        ->hasMany(Post::class)
+        ->select('post_id,title, post')
+        ->orderBy()
+        ->where(['title'=>['$like'=>'%computer']])
+        ->limit(10)
+        ->get();
 ```
 
 #### Dropping database table

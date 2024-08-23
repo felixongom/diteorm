@@ -26,6 +26,8 @@ class Model{
     private $second_table_to_join = '';
     private $join_result_string = '';
     private $result_by_id;
+    private $child_table;
+    private $___idname;
     private static $passed_table_name;
 
 
@@ -275,10 +277,10 @@ class Model{
     } 
     //Join section
     //join
-    private static function doJoins($second_table, $type_of_join, $select='*'){
-        $maker = self::maker([], $select);
+    private static function doJoins($second_table, $type_of_join, $select='*',$where = []){
+        $maker = self::maker($where, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $type_of_join $second_table ON 
-        $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)}";
+        $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)} $where";
         // 
         $stmt = $maker->instance->connect()->prepare($sql);
         $stmt->execute($maker->prepared_values);
@@ -289,20 +291,20 @@ class Model{
     }
     
     //join
-    public static function joins(string $second_table, array|string $select = '*'){
-        return self::doJoins($second_table, "INNER JOIN", $select); 
+    public static function joins(string $second_table, array $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, "INNER JOIN", $select, $where); 
     }
     //innerjoin
-    public static function innerJoins(string $second_table, array|string $select = '*'){
-        return self::doJoins($second_table, "INNER JOIN", $select, $select);
+    public static function innerJoins(string $second_table, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, "INNER JOIN", $select, $where);
     }
     //left joins
-    public static function leftJoins(string $second_table, array|string $select = '*'){
-        return self::doJoins($second_table, "LEFT JOIN", $select);
+    public static function leftJoins(string $second_table, $where, array|string $select = '*'){
+        return self::doJoins($second_table, "LEFT JOIN", $select, $where);
     }
     //right joins
-    public static function rightJoins(string $second_table, array|string $select = '*'){
-        return self::doJoins($second_table, "RIGHT JOIN", $select);
+    public static function rightJoins(string $second_table, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, "RIGHT JOIN", $select, $where);
     }
     //fetches all the record
     public static function sql(string $sql, array $values = []){
@@ -319,14 +321,16 @@ class Model{
     // ******************************************************************************************
     // ******************************************************************************************
     // non static methods
-    public function ___f(){
+    public function ___f($child_table = null){
         $maker = self::maker([]);
         //getting the table name for both Modal instanse and the custom model extnding
         $table_name = self::$passed_table_name?: $maker->table_name;
-        $this->table_name = $table_name;
+        $this->table_name = $child_table?:$table_name;
+        $this->child_table = $child_table;
         //
         $this->first_table_to_join = $table_name;
         $this->activate_find = true;
+
         return $this;
     }
     // non static methods
@@ -343,6 +347,7 @@ class Model{
         $maker = self::maker($primary_key);
         //getting the table name for both Modal instanse ans the custom model extnding
         $table_name = self::$passed_table_name?: $maker->table_name;
+        $this->___idname = $table_name;
         $where = str_replace('dite\model\model_id', strtolower($table_name.'_id'), $maker->where);
         $this->id_for_one_record = $primary_key;
         $this->sql = "SELECT * FROM $table_name $where LIMIT 1";
@@ -356,17 +361,17 @@ class Model{
         return $this;
     }
     // non static methods to paginate
-    public function ___p(){
-        $maker = self::maker([]);
-        //getting the table name for both Modal instanse and the custom model extnding
-        $table_name = self::$passed_table_name?: $maker->table_name;
-        $this->table_name = $table_name;
-        //
-        $this->first_table_to_join = $table_name;
-        $this->activate_paginating = true;
-        $this->prepared_values = $maker->prepared_values;
-        return $this;
-    }
+    // public function ___p(){
+    //     $maker = self::maker([]);
+    //     //getting the table name for both Modal instanse and the custom model extnding
+    //     $table_name = self::$passed_table_name?: $maker->table_name;
+    //     $this->table_name = $table_name;
+    //     //
+    //     $this->first_table_to_join = $table_name;
+    //     $this->activate_paginating = true;
+    //      $this->prepared_values = $maker->prepared_values;
+    //     return $this;
+    // }
     // ******************************************************************************************
     // ******************************************************************************************
     // ******************************************************************************************
@@ -461,11 +466,13 @@ class Model{
     // generate the limit
     public function limit(string|int $limit = 12){
         self::$limit = $limit<1?12:$limit;
+        $this->activate_find = true;
         return $this;
     }
     // generate the skip
     public function skip(string|int $skip=0){
         self::$skip = $skip<0?0:$skip;
+        $this->activate_find = true;
         return $this;
     }
     // generate the offset
@@ -475,11 +482,13 @@ class Model{
     // generate the skip
     public function page(string|int $page=1){
         self::$page = $page<1?1:$page;
+        $this->activate_paginating = true;
         return $this;
     }
     // generate the skip
     public function perpage(string|int $per_page=12){
         self::$per_page = $per_page<1?12:$per_page;
+        $this->activate_paginating = true;
         return $this;
     }
 
@@ -502,6 +511,8 @@ class Model{
 
     // generate column names
     public function get(){
+        // echo $this->___idname,'**',$this->id_for_one_record, $this->table_name,'**', json_encode($this->result_by_id);
+        // echo get_called_class();
         $self_limit = self::$limit;
         $self_skip = self::$skip;
         $self_page = self::$page;
@@ -509,10 +520,11 @@ class Model{
         //         
         if(isset($this->result_by_id) && $this->result_by_id === 'null'){// it returns the array
             return false;
-        }elseif($this->result_by_id){
+        }elseif(($this->result_by_id || $this->child_table) && !$this->table_name){//retrns sigle record bt is
             $maker = self::maker($this->id_for_one_record);
             //getting the table name for both Modal instanse ans the custom model extnding
             $table_name = self::$passed_table_name?: $maker->table_name;
+            //if this chin of child table is active
             $where = str_replace('dite\model\model_id', strtolower($table_name.'_id'), $maker->where);
             // 
             $_sql = "SELECT $this->select FROM $table_name $this->join_result_string $where LIMIT 1";
@@ -522,8 +534,11 @@ class Model{
             $stm_result = $stmt->fetch($maker->instance->fetchMode());
             return $stm_result;
         }else{ 
+            //providing the where clouse of childe table
+            $this->where = $this->result_by_id? "WHERE ".$this->___idname."_id = ".$this->id_for_one_record: $this->where;
+            $this->table_name = $this->child_table?:$this->table_name;
+            // 
             $this->sql = "SELECT $this->select FROM $this->table_name $this->where";
-            // echo $this->sql;
             
             if($this->group_by){
                 $this->sql.= " GROUP BY $this->group_by ";
@@ -538,17 +553,22 @@ class Model{
             }
             // count the number before limiting pagination 
             $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
-            $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $this->sql));
+            $count_sql = "SELECT * FROM $this->table_name $this->join_result_string $this->where";
+            $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $count_sql));
+            // echo json_encode($total_count);
             // 
             $DRIVER = self::maker()->instance->env()["DRIVER"];
             if($this->activate_paginating){
                 self::$skip = (self::$page-1)*self::$per_page;
                 self::$limit = self::$per_page;
+                $skip = self::$skip;
+                $limit = self::$limit;
+                // echo "skip-", self::$skip, "limit-", self::$limit, "**",$this->sql;
                 //             
                 if($DRIVER === "postgresql"){
-                    $this->sql.= " LIMIT $this->skip OFFSET $self_perpage";
+                    $this->sql.= " LIMIT $skip OFFSET $limit";
                 }else{
-                    $this->sql.= " LIMIT $self_skip, $self_perpage";   
+                    $this->sql.= " LIMIT $skip, $limit";   
                 }
             }elseif($this->activate_find && self::$limit){
                 if($DRIVER === "postgresql"){
@@ -557,7 +577,8 @@ class Model{
                     $this->sql.= " LIMIT $self_skip, $self_limit";   
                 }
             }
-            //
+            // echo "skip-", self::$skip, "limit-", self::$limit, "**",$this->sql;
+            // echo $this->sql ,"page-", self::$page, "perpage-", self::$per_page;
             //    
             $instance = new Connection();
             $conn = $instance->connect();
@@ -583,13 +604,12 @@ class Model{
                 $results['next_page'] = $next_page;
                 $results['prev_page'] = $prev_page;
                 $results['per_page'] = $total_count===0?null:self::$per_page;
+                $results['position'] = ((self::$page - 1) * self::$per_page) + 1;
                 $results['data'] = $data;
                 //
                 $results = $instance->isObjMode()? (object) $results:$results;
             }else{
-
                 $results = $stmt->fetchAll($instance->fetchMode());
-
                 }
             }
         $instance->debargPrint($this->sql, $this->prepared_values, null, true);
@@ -597,6 +617,7 @@ class Model{
         return !$results?[]:$results;
     }  
     private function countTotal(string $sql):int{
+        // echo $sql;
         $maker = self::maker();
         $stmt = $maker->instance->connect()->prepare($sql);
         $stmt->execute($this->prepared_values);
@@ -605,21 +626,26 @@ class Model{
         return $result->total_count;
     }
     //relationship has manay function
-    public function hasMany(string $ref_table, array $where_selector=[]):array{
-        $maker = self::maker($where_selector);
-        $where = str_replace("WHERE", "", $this->where?:$maker->where);
-        $use_where = $where ? " AND $where ":null;
-        $prepared_values = $maker->prepared_values ?:[];
-        // 
-        $parent_col = $maker->builder->idColName($maker->table_name);
-        $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? $use_where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($this->sql);
-        $stmt->execute([$this->id_for_one_record, ...$prepared_values]);
-        // 
-        $results = $stmt->fetchAll($maker->instance->fetchMode());
-        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        return $results??[];
+    public function hasMany(string $ref_table, array $where_selector=[]){
+        // $maker = self::maker($where_selector);
+        // $where = str_replace("WHERE", "", $this->where?:$maker->where);
+        // $use_where = $where ? " AND $where ":null;
+        // $prepared_values = $maker->prepared_values ?:[];
+        // // 
+        // $parent_col = $maker->builder->idColName($maker->table_name);
+        // $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? $use_where";
+        // // 
+        // $stmt = $maker->instance->connect()->prepare($this->sql);
+        // $stmt->execute([$this->id_for_one_record, ...$prepared_values]);
+        // // 
+        // $results = $stmt->fetchAll($maker->instance->fetchMode());
+        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
+        // return $results??[];
+        // *****************************************************
+        // $child_table = new Model($ref_table);
+        // print_r(get_called_class());
+        // return $child_table->___f($ref_table);
+        return $this->___f($ref_table);
     }
     
     //relationship has one function
@@ -682,19 +708,23 @@ class Model{
         $inst = new Model(get_called_class());
         return $inst->___f();
     }
-    //paginate
-    public static function paginate(){
-        $inst = new Model(get_called_class());
-        return $inst->___p();
-    }
     //table
     public static function table($tablename){
         $inst = new Model($tablename);
             return $inst->___f();
     }
-    //ptable for pagination
-    public static function Ptable($tablename){
-        $inst = new Model($tablename);
-        return $inst->___p(); 
-    }  
+    // ***************************************************************************
+    // ***************************************************************************
+    // ***************************************************************************
+    // ***************************************************************************
+    // //paginate
+    // public static function paginate(){
+    //     $inst = new Model(get_called_class());
+    //     return $inst->___p();
+    // }
+    // //ptable for pagination
+    // public static function Ptable($tablename){
+    //     $inst = new Model($tablename);
+    //     return $inst->___p(); 
+    // }  
  }
