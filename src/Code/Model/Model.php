@@ -28,9 +28,10 @@ class Model{
     private $result_by_id;
     private $child_table;
     private $___idname;
+    private $activate_hasone;
+
     private static $passed_table_name;
-
-
+    // 
     public function __construct($table = null)
     {
         self::$passed_table_name = $table;
@@ -201,7 +202,7 @@ class Model{
     }
     //the actual function that adds to the database
     private static function addAndPersistsToDb(array $data, $instance){
-        $table_name = get_called_class(); //table name
+        $table_name = strtolower(get_called_class()); //table name
         $conn = $instance->connect();
         $isSqlite = $instance->env()['DRIVER'] === 'sqlite';
         $time_colmn_exist = $instance->includeTime($table_name, 'created_at'); //boolean
@@ -330,11 +331,18 @@ class Model{
         //
         $this->first_table_to_join = $table_name;
         $this->activate_find = true;
-
         return $this;
     }
     // non static methods
     public function where(array $where_selector = []){
+        if($this->___idname && is_array($where_selector)) {
+            $idcolName = strtolower($this->table_name.".".$this->___idname)."_id";
+            // echo $idcolName;
+            if(array_key_exists($idcolName, $where_selector)){
+                unset($where_selector[$idcolName]);
+            }
+        }
+        // 
         $maker = self::maker($where_selector);
         //getting the table name for both Modal instanse ans the custom model extnding
         $this->where .= $maker->where;
@@ -347,7 +355,7 @@ class Model{
         $maker = self::maker($primary_key);
         //getting the table name for both Modal instanse ans the custom model extnding
         $table_name = self::$passed_table_name?: $maker->table_name;
-        $this->___idname = $table_name;
+        $this->___idname = strtolower($table_name);
         $where = str_replace('dite\model\model_id', strtolower($table_name.'_id'), $maker->where);
         $this->id_for_one_record = $primary_key;
         $this->sql = "SELECT * FROM $table_name $where LIMIT 1";
@@ -508,26 +516,39 @@ class Model{
         }
         return $this;
     }
-
+    //custom userid
+    private function customWhere(){
+        if(!$this->activate_hasone){
+            $idcolName = strtolower($this->___idname);
+            $this->table_name = strtolower($this->child_table?:$this->table_name);
+            // 
+            $child_where = "WHERE ".$this->table_name.".".$idcolName."_id = ".$this->id_for_one_record;
+            $main_where = is_string($this->where)!==''?str_replace('WHERE', ' AND ', $this->where):$this->where;
+            // 
+            $this->where = $this->result_by_id?$child_where.$main_where : $this->where;
+            // 
+        }else{
+            
+        }
+    }
     // generate column names
     public function get(){
-        // echo $this->___idname,'**',$this->id_for_one_record, $this->table_name,'**', json_encode($this->result_by_id);
-        // echo get_called_class();
+        echo json_encode($this->activate_hasone);
         $self_limit = self::$limit;
         $self_skip = self::$skip;
         $self_page = self::$page;
         $self_perpage = self::$per_page;
         //         
         if(isset($this->result_by_id) && $this->result_by_id === 'null'){// it returns the array
-            return false;
+            return $this->___idname?[]:false;
         }elseif(($this->result_by_id || $this->child_table) && !$this->table_name){//retrns sigle record bt is
             $maker = self::maker($this->id_for_one_record);
             //getting the table name for both Modal instanse ans the custom model extnding
-            $table_name = self::$passed_table_name?: $maker->table_name;
+            $this->table_name = strtolower(self::$passed_table_name?: $maker->table_name);
             //if this chin of child table is active
-            $where = str_replace('dite\model\model_id', strtolower($table_name.'_id'), $maker->where);
+            $where = str_replace('dite\model\model_id', strtolower($this->table_name .'_id'), $maker->where);
             // 
-            $_sql = "SELECT $this->select FROM $table_name $this->join_result_string $where LIMIT 1";
+            $_sql = "SELECT $this->select FROM $this->table_name  $this->join_result_string $where LIMIT 1";
             $stmt = $maker->instance->connect()->prepare($_sql);
             $stmt->execute($maker->prepared_values);
             // Fetch the records so we can display them in our template.
@@ -535,8 +556,7 @@ class Model{
             return $stm_result;
         }else{ 
             //providing the where clouse of childe table
-            $this->where = $this->result_by_id? "WHERE ".$this->___idname."_id = ".$this->id_for_one_record: $this->where;
-            $this->table_name = $this->child_table?:$this->table_name;
+            $this->customWhere();
             // 
             $this->sql = "SELECT $this->select FROM $this->table_name $this->where";
             
@@ -555,7 +575,6 @@ class Model{
             $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
             $count_sql = "SELECT * FROM $this->table_name $this->join_result_string $this->where";
             $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $count_sql));
-            // echo json_encode($total_count);
             // 
             $DRIVER = self::maker()->instance->env()["DRIVER"];
             if($this->activate_paginating){
@@ -563,7 +582,6 @@ class Model{
                 self::$limit = self::$per_page;
                 $skip = self::$skip;
                 $limit = self::$limit;
-                // echo "skip-", self::$skip, "limit-", self::$limit, "**",$this->sql;
                 //             
                 if($DRIVER === "postgresql"){
                     $this->sql.= " LIMIT $skip OFFSET $limit";
@@ -577,8 +595,6 @@ class Model{
                     $this->sql.= " LIMIT $self_skip, $self_limit";   
                 }
             }
-            // echo "skip-", self::$skip, "limit-", self::$limit, "**",$this->sql;
-            // echo $this->sql ,"page-", self::$page, "perpage-", self::$per_page;
             //    
             $instance = new Connection();
             $conn = $instance->connect();
@@ -609,7 +625,9 @@ class Model{
                 //
                 $results = $instance->isObjMode()? (object) $results:$results;
             }else{
-                $results = $stmt->fetchAll($instance->fetchMode());
+                $results = $this->activate_hasone?
+                            $stmt->fetch($instance->fetchMode()):
+                            $stmt->fetchAll($instance->fetchMode());
                 }
             }
         $instance->debargPrint($this->sql, $this->prepared_values, null, true);
@@ -617,7 +635,6 @@ class Model{
         return !$results?[]:$results;
     }  
     private function countTotal(string $sql):int{
-        // echo $sql;
         $maker = self::maker();
         $stmt = $maker->instance->connect()->prepare($sql);
         $stmt->execute($this->prepared_values);
@@ -645,21 +662,27 @@ class Model{
         // $child_table = new Model($ref_table);
         // print_r(get_called_class());
         // return $child_table->___f($ref_table);
-        return $this->___f($ref_table);
+        return $this->___f($ref_table );
     }
     
     //relationship has one function
     public function hasOne(string $ref_table){
-        $maker = self::maker();
-        $parent_col = $maker->builder->idColName($maker->table_name);
-        // 
-        $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? LIMIT 1";
-        $stmt = $maker->instance->connect()->prepare($this->sql);
-        $stmt->execute([$this->id_for_one_record]);
-        $results = $stmt->fetch($maker->instance->fetchMode());
-        // 
-        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        return $results??[];
+        // $maker = self::maker();
+        // $parent_col = $maker->builder->idColName($maker->table_name);
+        // // 
+        // $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? LIMIT 1";
+        // $stmt = $maker->instance->connect()->prepare($this->sql);
+        // $stmt->execute([$this->id_for_one_record]);
+        // $results = $stmt->fetch($maker->instance->fetchMode());
+        // // 
+        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
+        // return $results??[];
+
+        // ***************************
+        // ***************************
+        // print_r($this->result_by_id);
+        $this->activate_hasone = true;
+        return $this->___f($ref_table);
     }
     //relationship belongs to function
     public function belongsToOne(string $ref_table){
@@ -701,16 +724,16 @@ class Model{
     ///***************************************************************** */
     ///***************************************************************** */
     public static function findByPk($where){
-        $inst = new Model(get_called_class());
+        $inst = new Model(strtolower(get_called_class()));
         return $inst->__ByPk($where);
     }
     public static function find(){
-        $inst = new Model(get_called_class());
+        $inst = new Model(strtolower(get_called_class()));
         return $inst->___f();
     }
     //table
     public static function table($tablename){
-        $inst = new Model($tablename);
+        $inst = new Model(strtolower($tablename));
             return $inst->___f();
     }
     // ***************************************************************************

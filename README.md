@@ -824,9 +824,8 @@ $users = User::find()
         ->get()
 ```
 
-- **find(), find() and findBypk can not be chained together, you will get an error**
-- **find() method limits the result with page() and perpage() methods**
-- **find() method limits the result with limit() and skip()/offset() methods**
+- **find() and findBypk can not be chained together, you will get an error**
+- **page() and perpage() methods will activate pagination**
 
 ### joinOn
 This will require you to pass the name of the toble you are joining and the condition on which you are joining
@@ -838,6 +837,12 @@ $users = User::find()
         ->where(['user.first_name'=>'tom','user.age'=>[':gt'=>18]]) //optional
         ->get()
 ```
+##### There are also other methods for joining like;
+- leftJoinOn()
+- rightJoinOn()
+- innerJoinOn()
+- joinOn()
+
 ## Where clause.
 
 The where clause is passed as a parameter in the following methods.
@@ -856,9 +861,10 @@ The where clause is passed as a parameter in the following methods.
 you can also chain the where() method on the following methods
 - ::find()
 - ::table()
-- ::find()
 - ::findBypk()
 - ::hasMany()
+- ::hasOne()
+- ::hasManyThrough()
 
 **It can be passed in the following ways**
 
@@ -887,7 +893,9 @@ When you pass an associative array to methods like **findOne()** or **all()**, t
    $result = User::all(["user_id"=>5, "name"=>"tom"])
    //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
    //OR
-   $result = Posts::find(["user_id"=>5, "name"=>"tom"])->get()
+   $result = Posts::find()
+            ->where(["user_id"=>5, "name"=>"tom"])
+            ->get()
    //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
 ```
 
