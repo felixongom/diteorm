@@ -337,7 +337,7 @@ class Model{
     public function where(array $where_selector = []){
         if($this->___idname && is_array($where_selector)) {
             $idcolName = strtolower($this->table_name.".".$this->___idname)."_id";
-            // echo $idcolName;
+            // 
             if(array_key_exists($idcolName, $where_selector)){
                 unset($where_selector[$idcolName]);
             }
@@ -518,28 +518,26 @@ class Model{
     }
     //custom userid
     private function customWhere(){
+        $idcolName = strtolower($this->___idname);
+        $this->table_name = strtolower($this->child_table?:$this->table_name);
+        // 
         if(!$this->activate_hasone){
-            $idcolName = strtolower($this->___idname);
-            $this->table_name = strtolower($this->child_table?:$this->table_name);
-            // 
             $child_where = "WHERE ".$this->table_name.".".$idcolName."_id = ".$this->id_for_one_record;
             $main_where = is_string($this->where)!==''?str_replace('WHERE', ' AND ', $this->where):$this->where;
             // 
             $this->where = $this->result_by_id?$child_where.$main_where : $this->where;
             // 
-        }else{
-            
         }
     }
     // generate column names
     public function get(){
-        echo json_encode($this->activate_hasone);
         $self_limit = self::$limit;
         $self_skip = self::$skip;
         $self_page = self::$page;
         $self_perpage = self::$per_page;
         //         
         if(isset($this->result_by_id) && $this->result_by_id === 'null'){// it returns the array
+            if($this->___idname && $this->activate_hasone) return false;
             return $this->___idname?[]:false;
         }elseif(($this->result_by_id || $this->child_table) && !$this->table_name){//retrns sigle record bt is
             $maker = self::maker($this->id_for_one_record);
@@ -553,6 +551,7 @@ class Model{
             $stmt->execute($maker->prepared_values);
             // Fetch the records so we can display them in our template.
             $stm_result = $stmt->fetch($maker->instance->fetchMode());
+            
             return $stm_result;
         }else{ 
             //providing the where clouse of childe table
@@ -632,6 +631,7 @@ class Model{
             }
         $instance->debargPrint($this->sql, $this->prepared_values, null, true);
         $instance = null;
+        
         return !$results?[]:$results;
     }  
     private function countTotal(string $sql):int{
@@ -686,16 +686,16 @@ class Model{
     }
     //relationship belongs to function
     public function belongsToOne(string $ref_table){
-        $maker = self::maker();
-        $ref_col = $maker->builder->idColName($ref_table);
-        $this->sql = "SELECT * FROM $ref_table WHERE $ref_col = ? LIMIT 1";
-        // 
-        $stmt = $maker->connect()->prepare($this->sql);
-        $stmt->execute([$this->id_for_one_record]);
-        // 
-        $results = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        return $results??[];
+        // $maker = self::maker();
+        // $ref_col = $maker->builder->idColName($ref_table);
+        // $this->sql = "SELECT * FROM $ref_table WHERE $ref_col = ? LIMIT 1";
+        // // 
+        // $stmt = $maker->connect()->prepare($this->sql);
+        // $stmt->execute([$this->id_for_one_record]);
+        // // 
+        // $results = $stmt->fetch($maker->instance->fetchMode());
+        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
+        // return $results??[];
     }
     //relationship for many to many function
     public function hasManyMany(string $ref_table, array $where_selector=[]):array{
