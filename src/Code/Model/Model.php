@@ -31,6 +31,7 @@ class Model{
     private $activate_hasone;
 
     private static $passed_table_name;
+    private $belongs_to_table;
     // 
     public function __construct($table = null)
     {
@@ -519,6 +520,7 @@ class Model{
     //custom userid
     private function customWhere(){
         $idcolName = strtolower($this->___idname);
+        echo $this->belongs_to_table;
         $this->table_name = strtolower($this->child_table?:$this->table_name);
         // 
         if(!$this->activate_hasone){
@@ -529,17 +531,29 @@ class Model{
             // 
         }
     }
+    private function __belongsToOne(){
+        if($this->belongs_to_table){
+            $_result_by_id = (new Connection)->isObjMode()?get_object_vars($this->result_by_id):$this->result_by_id;
+            $refered_id = $_result_by_id[$this->belongs_to_table."_id"];
+            // echo $refered_id,  $this->belongs_to_table;
+            // print_r($_result_by_id);
+            $where = "WHERE $this->belongs_to_table"."_id = $refered_id";
+            $sql = "SELECT $this->select FROM $this->belongs_to_table $where LIMI";
+            // echo '((((((((((',$sql,'))))))))))))';
+            return $sql;
+        }
+    }
     // generate column names
     public function get(){
+        // echo 'belongs_table ****',$this->belongs_to_table, ' passed_table ***',self::$passed_table_name;
         $self_limit = self::$limit;
         $self_skip = self::$skip;
-        $self_page = self::$page;
-        $self_perpage = self::$per_page;
-        //         
+        //   
         if(isset($this->result_by_id) && $this->result_by_id === 'null'){// it returns the array
             if($this->___idname && $this->activate_hasone) return false;
             return $this->___idname?[]:false;
         }elseif(($this->result_by_id || $this->child_table) && !$this->table_name){//retrns sigle record bt is
+            
             $maker = self::maker($this->id_for_one_record);
             //getting the table name for both Modal instanse ans the custom model extnding
             $this->table_name = strtolower(self::$passed_table_name?: $maker->table_name);
@@ -547,11 +561,22 @@ class Model{
             $where = str_replace('dite\model\model_id', strtolower($this->table_name .'_id'), $maker->where);
             // 
             $_sql = "SELECT $this->select FROM $this->table_name  $this->join_result_string $where LIMIT 1";
-            $stmt = $maker->instance->connect()->prepare($_sql);
-            $stmt->execute($maker->prepared_values);
+            // $this->__belongsToOne();
+            // echo "<br>** $this->sql **";
+            // echo "<br>** {$this->__belongsToOne()} **";
+            $stmt = null;
+            if($this->belongs_to_table){ //refering to the parent table during
+                // echo "<br>**$this->where **";
+                $stmt = $maker->instance->connect()->prepare($this->__belongsToOne());
+                $stmt->execute();
+            }else{
+                $stmt = $maker->instance->connect()->prepare($_sql);
+                $stmt->execute($maker->prepared_values);
+            }
             // Fetch the records so we can display them in our template.
             $stm_result = $stmt->fetch($maker->instance->fetchMode());
-            
+            // echo 'passed-',self::$passed_table_name,"  belongs-" ,$this->belongs_to_table;
+            $this->resetVariables();
             return $stm_result;
         }else{ 
             //providing the where clouse of childe table
@@ -631,6 +656,8 @@ class Model{
             }
         $instance->debargPrint($this->sql, $this->prepared_values, null, true);
         $instance = null;
+        // 
+        $this->resetVariables();
         
         return !$results?[]:$results;
     }  
@@ -642,8 +669,15 @@ class Model{
         $result = $stmt->fetch(PDO::FETCH_OBJ);
         return $result->total_count;
     }
+    
+    // resetting somevariables
+    private function resetVariables(){
+        $this->activate_hasone = false;
+        $this->belongs_to_table = false;
+    }
+
     //relationship has manay function
-    public function hasMany(string $ref_table, array $where_selector=[]){
+    public function hasMany(string $ref_table){
         // $maker = self::maker($where_selector);
         // $where = str_replace("WHERE", "", $this->where?:$maker->where);
         // $use_where = $where ? " AND $where ":null;
@@ -667,20 +701,19 @@ class Model{
     
     //relationship has one function
     public function hasOne(string $ref_table){
-        // $maker = self::maker();
-        // $parent_col = $maker->builder->idColName($maker->table_name);
-        // // 
-        // $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? LIMIT 1";
-        // $stmt = $maker->instance->connect()->prepare($this->sql);
-        // $stmt->execute([$this->id_for_one_record]);
-        // $results = $stmt->fetch($maker->instance->fetchMode());
-        // // 
-        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        // return $results??[];
+        $maker = self::maker();
+        $parent_col = $maker->builder->idColName($maker->table_name);
+        // 
+        $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? LIMIT 1";
+        $stmt = $maker->instance->connect()->prepare($this->sql);
+        $stmt->execute([$this->id_for_one_record]);
+        $results = $stmt->fetch($maker->instance->fetchMode());
+        // 
+        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
+        return $results??[];
 
         // ***************************
         // ***************************
-        // print_r($this->result_by_id);
         $this->activate_hasone = true;
         return $this->___f($ref_table);
     }
@@ -696,6 +729,8 @@ class Model{
         // $results = $stmt->fetch($maker->instance->fetchMode());
         // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
         // return $results??[];
+        $this->belongs_to_table = strtolower($ref_table);
+        return $this;
     }
     //relationship for many to many function
     public function hasManyMany(string $ref_table, array $where_selector=[]):array{
@@ -736,18 +771,4 @@ class Model{
         $inst = new Model(strtolower($tablename));
             return $inst->___f();
     }
-    // ***************************************************************************
-    // ***************************************************************************
-    // ***************************************************************************
-    // ***************************************************************************
-    // //paginate
-    // public static function paginate(){
-    //     $inst = new Model(get_called_class());
-    //     return $inst->___p();
-    // }
-    // //ptable for pagination
-    // public static function Ptable($tablename){
-    //     $inst = new Model($tablename);
-    //     return $inst->___p(); 
-    // }  
  }

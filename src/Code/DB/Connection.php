@@ -142,11 +142,21 @@ class Connection
             $mess = $messege===null?"":"<div>messege = $messege<div><br>";
             $hr = ($SQL!==null || $PREPARED_VALUE!==null || $messege !==null)?"<hr style='background-color: #333; height:2px;border:none'>":'';
             // 
+            $nonsql_color = $this->colorNonfullSql();
             echo("
-                <div style='background-color: #101720; color:#e6e6e6 ; padding:15px 5px; font-family:tahoma'>
+                <div style='background-color: #101720; color:$nonsql_color ; padding:5px 5px; font-family:tahoma'>
                     $mess $sql $value $hr
                 </div>");
         }
+    }
+
+    // 
+    private function colorNonfullSql(){
+        $nonsql_color = null;
+        if(array_key_exists('NONSQL_COLOR', $this->env())){
+            $nonsql_color = $this->env()['NONSQL_COLOR']?? '#f2f2';
+        }
+        return $nonsql_color;
     }
 
     //
@@ -157,8 +167,12 @@ class Connection
         ,' ORDER ', ' BY ',' DSC ',' DESC ',' AND ',' OR ',' NOT ',' COUNT ',' DISTINCT ',' IN ',' BETWEEN ',' EXIST ',' ALL ',' ANY ',' COALESCE '];
         // 
         $sql_color = null;
+        $nonsql_color = null;
         if(array_key_exists('SQL_COLOR', $this->env())){
             $sql_color = $this->env()['SQL_COLOR']?? '#e600ac';
+        }
+        if(array_key_exists('NONSQL_COLOR', $this->env())){
+            $sql_color = $this->env()['NONSQL_COLOR']?? '#e600ac';
         }
         foreach ($key_words as $key_word) {
             $sql = str_replace($key_word, " <span style='color:$sql_color;'>$key_word</span> ", $sql);
