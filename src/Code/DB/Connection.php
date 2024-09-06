@@ -137,46 +137,44 @@ class Connection
         if(array_key_exists('LOGGER', $this->env) && $this->env['LOGGER']==1){
             $val =  json_encode($PREPARED_VALUE);
             $check_many = $many ?$val:"[$val]";
-            $sql = $SQL===null?'':"<div>sql = {$this->colorfullSql($SQL)}<div> <br>";
+            $sql = $SQL===null?'':"<div style='margin:0;'>sql = {$this->colorfullSql($SQL,'SQL_COLOR','#cc00cc')}<div> <br>";
             $value = $PREPARED_VALUE===null?"":"<div>values = $check_many</div>";
             $mess = $messege===null?"":"<div>messege = $messege<div><br>";
-            $hr = ($SQL!==null || $PREPARED_VALUE!==null || $messege !==null)?"<hr style='background-color: #333; height:2px;border:none'>":'';
             // 
-            $nonsql_color = $this->colorNonfullSql();
+            $separator = $this->setColor('SEPARATOR', '#777');
+            $hr = ($SQL!==null || $PREPARED_VALUE!==null || $messege !==null)?"<hr style='background-color: $separator; height:2px;border:none'>":'';
+            // 
+            $nonsql_color = $this->setColor('NONSQL_COLOR', '#cccccc');
+            $color_bg = $this->setColor('SQL_BG', '#011222');
+            // 
             echo("
-                <div style='background-color: #101720; color:$nonsql_color ; padding:5px 5px; font-family:tahoma'>
+                <div style='background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
                     $mess $sql $value $hr
                 </div>");
         }
     }
-
-    // 
-    private function colorNonfullSql(){
-        $nonsql_color = null;
-        if(array_key_exists('NONSQL_COLOR', $this->env())){
-            $nonsql_color = $this->env()['NONSQL_COLOR']?? '#f2f2';
-        }
-        return $nonsql_color;
-    }
-
     //
-    private function colorfullSql($sql){
+    private function colorfullSql($sql, $key, $default_color){
         $key_words = [' DATABASE  ',' DROP ',' ALTER ', ' COLUMN ',' PIMARY ',' FOREIGN ', ' REFERENCES  ',' KEY ',' CONSTRAINT ',' ADD ',' CHECK ',' ADD ',' DEFAULT ',
         'SELECT ', ' FROM ',' WHERE ', ' JOIN ',' LEFT JOIN ',' RIGHT JOIN ',' INNER JOIN ', ' FULL OUTER JOIN ', ' ON ', ' LIMIT ', ' OFFSET ',
         ' CREATE ',' TABLE ',' LIKE ',' AS ',' TOP ',' DELETE ',' UPDATE ',' SET ',' IS ',' NOT ',' UNIQUE ',' NULL ',' INSERT ',' INTO ',' VALUES ',' GROUP ',' ORDER ',' HAVING '
         ,' ORDER ', ' BY ',' DSC ',' DESC ',' AND ',' OR ',' NOT ',' COUNT ',' DISTINCT ',' IN ',' BETWEEN ',' EXIST ',' ALL ',' ANY ',' COALESCE '];
         // 
-        $sql_color = null;
-        $nonsql_color = null;
-        if(array_key_exists('SQL_COLOR', $this->env())){
-            $sql_color = $this->env()['SQL_COLOR']?? '#e600ac';
-        }
-        if(array_key_exists('NONSQL_COLOR', $this->env())){
-            $sql_color = $this->env()['NONSQL_COLOR']?? '#e600ac';
-        }
+        $sql_color = $this->setColor($key, $default_color);
+        
         foreach ($key_words as $key_word) {
             $sql = str_replace($key_word, " <span style='color:$sql_color;'>$key_word</span> ", $sql);
         }
         return $sql;
+    }
+
+    private function setColor($key, $default_color){
+        $color = null;
+        if(array_key_exists($key, $this->env())){
+            $color = $this->env()[$key]?str_replace(':','#', $this->env()[$key]):$default_color;
+        }else{
+            $color = $default_color;
+        }
+        return $color;
     }
 }

@@ -575,7 +575,7 @@ class Model{
             }
             // Fetch the records so we can display them in our template.
             $stm_result = $stmt->fetch($maker->instance->fetchMode());
-            // echo 'passed-',self::$passed_table_name,"  belongs-" ,$this->belongs_to_table;
+            // echo 'passed-',self::$passed_table_name, $this->belongs_to_table,"  belongs-" ,$this->belongs_to_table;
             $this->resetVariables();
             return $stm_result;
         }else{ 
