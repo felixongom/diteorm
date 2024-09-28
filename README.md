@@ -16,7 +16,7 @@ User::delete(['age'=>20]); //deleting a user with age 20
 
 User::all(['age'=>3]); //getting users with age 3
 
-DB::table('blog_post')->find()
+DB::table('blog_post')
   ->limit(3)
   ->select('title, post_body')
   ->get();
