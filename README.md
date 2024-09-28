@@ -15,6 +15,7 @@ User::delete(2) //deleting a user with age 20
 User::delete(['age'=>20]); //deleting a user with age 20
 
 User::all(['age'=>3]); //getting users with age 3
+User::find()->get(); //getting all users
 
 DB::table('blog_post')
   ->limit(3)
@@ -105,8 +106,8 @@ Incase you don't want to add all the connetion details directly to the .env file
   'APP_PASSWORD' => 'rqae hrue bili alru',
   'LOGGER' => 1,
   'SQL_COLOR' => ':3f2',
-  'NONSQL_COLOR' = ':f3fb'
-  'SQL_BG' = 'red'
+  'NONSQL_COLOR' = ':f3fb',
+  'SQL_BG' = 'red',
   'SEPARATOR' = 'white'
 ])
 
@@ -118,8 +119,8 @@ Incase you don't want to add all the connetion details directly to the .env file
   'APP_PASSWORD' => 'rqae hrue bili alru',
   'IS_DEVMODE' => 1,
   'SQL_COLOR' => ':3f2',
-  'NONSQL_COLOR' = ':f3fb'
-  'SQL_BG' = 'red'
+  'NONSQL_COLOR' = ':f3fb',
+  'SQL_BG' = 'red',
   'SEPARATOR' = 'white'
 ])
 ```
@@ -149,8 +150,6 @@ Then the model classes(representing each table) are defined like below.
 use Dite\Model\Model;
 require_once "path/to/vendor/autoload.php";
 
-//users
-//OR 
 class DB extends Model{
   public function __constructor(){
     self::setup([
@@ -163,13 +162,13 @@ class DB extends Model{
     ]);
   }
 }
+
+//users
 class Users extends DB{}
 //posts
 class Posts extends DB{}
 // Status
 class Status extends DB{}
-
-
 ```
 
 **2. Using Dite ***Schema*** to create the database.**
@@ -302,7 +301,7 @@ class Courses extends Model{
   }
 }
 //Intermediate table
-class Teachers_Courses extends Model{
+class TeachersCourses extends Model{
 
   public function __construct() {
     Schema::create(TeachersCourses::class, function(Table $table){
@@ -471,6 +470,8 @@ $table->primaryKey();
 This section will teach us how to create, read, update and delete record.
 
 ### Create new record.
+
+class BlogPost queries the tabl blog_post and ComponyActiveEmployees queries compony_active_employees
 
 Creating a new user into users table as shown below.
 
@@ -814,9 +815,10 @@ $user = DB::table('user')::findById(4);
 #### Other chaining method.
 There are other chaining methods.
 
-##### withAll()
+##### - withAll()
 It takes in three parameters; table name , optional where clause and selected feilds. 
-It will add all the records that have user_id form the post table to the corresponding record in the result.
+It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
+
 ```php
 $user = User::find()
         ->withAll(Post::class, ['status'=>'active'],'username, age')
@@ -827,14 +829,14 @@ $user = User::find(5)
         ->get();
 ```
 
-##### withOne()
-It takes in three parameters; table name , optional where clause and selected feilds.
+##### - withOne()
+It takes in three parameters; table name , optional where clause and selected feilds. It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
 ```php
 $user = User::find()
         ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
 //returns users post where you can paginate, each having there post appended to 
-//
+
 $user = User::find(3)
         ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
@@ -843,18 +845,19 @@ $user = User::find(3)
 
 ##### attach()
 It takes in three parameters; table name , optional where clause and selected feilds.
+It retrieve the post or post with with person who posted it. Works in a one to one relationship.
 ```php
 $user = Post::find()
-        ->withAll(User::class)
+        ->attach(User::class)
         ->get();
 //returns posts together with the user wo posted it. 
 $user = Post::find()
-        ->withAll(User::class)
+        ->attach(User::class)
         ->get();
 //returns a post together with the user wo posted it. 
 ```
 ##### withMost()
-It gets the records from first table whose id has appered the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+It gets the records from first table whose id has appeared the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::find()
         ->withMost(Post::class)
@@ -880,20 +883,17 @@ $user = User::find()
 //returns users that has no post. 
 ```
 ##### withThrough()
-It takes in three parameters; table name , optional where clause and selected feilds. 
-It will add all the records that have user_id form the post table to the corresponding record in the result. This happens in a many to many relationship.
+It takes in three parameters; table name. It will add all the records that have user_id from the post table to the corresponding record in the result. This happens in a many to many relationship.
 ```php
 $user = Teacher::find()
-        ->withOut(Course::class)
+        ->withThrough(Course::class)
         ->get();
-//returns users that has no post. 
 ```
 ##### attachThrough()
-It takes in three parameters; table name , optional where clause and selected feilds. 
-It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
+It takes in three parameters; table name. It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
 ```php
 $user = Course::find()
-        ->withOut(Teacher::class)
+        ->attachThrough(Teacher::class)
         ->get();
 //returns users that has no post. 
 ```
