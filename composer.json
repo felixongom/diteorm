@@ -8,6 +8,9 @@
             "Dite\\": "src/Code"
         }
     },
+    "require": {
+        "php": ">=7"
+    },
     "authors": [
         {
             "name": "ongom felix"
