@@ -11,7 +11,7 @@ User::update(1,['user'=>'mike doe']); //updating a user with id 1
 
 User::update(['age'=>20],['user'=>'mike doe']); //updating a user with id 20
 
-User::delete(2) //deleting a user with age 20
+User::delete(2); //deleting a user with age 20
 User::delete(['age'=>20]); //deleting a user with age 20
 
 User::all(['age'=>3]); //getting users with age 3
