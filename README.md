@@ -8,6 +8,24 @@ It allows us to keep oursevles within only PHP code instead of switching between
 ```bash
 composer require ongom/dite-orm
 ```
+### sample usage
+```php
+User::create(['user'=>'john doe']); //creating a user
+
+User::update(1,['user'=>'mike doe']); //updating a user with id 1
+
+User::update(['age'=>20],['user'=>'mike doe']); //updating a user with id 20
+
+User::delete(2) //deleting a user with age 20
+User::delete(['age'=>20]); //deleting a user with age 20
+
+User::all(['age'=>3]); //getting users with age 3
+
+DB::table('blog_post')->find()
+  ->limit(3)
+  ->select('title, post_body')
+  ->get();
+```
 
 ### Setup.
 
@@ -131,14 +149,25 @@ use Dite\Model\Model;
 require_once "path/to/vendor/autoload.php";
 
 //users
-class Users extends Model{}
-//posts
-class Posts extends Model{}
-// Status
-class Status extends Model{}
-
 //OR 
-class DB extends Model{}
+class DB extends Model{
+  public function __constructor(){
+    self::setup([
+      'DRIVER' => 'sqlite',
+      'DATABASE_NAME' => 'schooldb',
+      'RUN_SCHEMA' => 1,
+      'APP_PASSWORD' => 'rqae hrue bili alru',
+      'LOGGER' => 1,
+      'SQL_COLOR' => ':3f2',
+    ]);
+  }
+}
+class Users extends DB{}
+//posts
+class Posts extends DB{}
+// Status
+class Status extends DB{}
+
 
 ```
 
@@ -461,7 +490,7 @@ The create method returns the new record created only if you are creating a sing
 
 ### Updating record.
 
-The static method update() and updateMany() are used, they takes in two paramters, the record you want to update (id or selector) the and associative array of the new values
+The static method update() is used, is takes in two paramters, the record you want to update (id or where clause) the and associative array of the new values
 
 ```php
 //updating the user with id 1
@@ -688,7 +717,7 @@ $users = User::find()
 
 ##### limit().
 
-This is used to spacify the number of record you want to fetch. It defaults to 12
+This is used to spacify the number of records you want to fetch. It defaults to 12.
 
 ```php
 $users = User::find()->limit(5)->get();
@@ -697,7 +726,7 @@ $users = User::find()->limit(5)->get();
 
 ##### skip() or offset().
 
-Both of these do the same thing. They are used to spacify the number of records that will be skiped. It defaults to 0 
+Both of these do the same thing. They are used to spacify the number of records that will be skiped. It defaults to 0.
 
 ```php
 $users = User::find()->skip(10)->get();
@@ -774,7 +803,9 @@ $users = DB::table('post')
           ->get();
 ```
 You can chain any valid method like select, join, group, etc.
+
 ### Also
+
 ```php
 $user = DB::table('user')::all();
 $user = DB::table('user')::findById(4);
@@ -783,7 +814,8 @@ $user = DB::table('user')::findById(4);
 There are other chaining methods.
 
 ##### withAll()
-It takes in three parameters; table name , optional where clause and selected columns. 
+It takes in three parameters; table name , optional where clause and selected feilds. 
+It will add all the records that have user_id form the post table to the corresponding record in the result.
 ```php
 $user = User::find()
         ->withAll(Post::class, ['status'=>'active'],'username, age')
@@ -793,13 +825,12 @@ $user = User::find(5)
         ->withAll(Post::class, ['status'=>'active'],'username, age')
         ->get();
 ```
-It will add all the records that have user_id form the post table to the corresponding record in the result.
 
 ##### withOne()
-It takes in three parameters; table name , optional where clause and selected column.
+It takes in three parameters; table name , optional where clause and selected feilds.
 ```php
 $user = User::find()
-        ->withAll(Post::class, ['status'=>'active'],'title')
+        ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
 //returns users post where you can paginate, each having there post appended to 
 //
@@ -810,7 +841,7 @@ $user = User::find(3)
 ```
 
 ##### attach()
-It takes in three parameters; table name , optional where clause and selected column.
+It takes in three parameters; table name , optional where clause and selected feilds.
 ```php
 $user = Post::find()
         ->withAll(User::class)
@@ -828,23 +859,40 @@ $user = User::find()
         ->withMost(Post::class)
         ->limit(5)
         ->get();
-//returns users that has posted the most. 
+//returns 5 users that has posted the most. 
 ```
-##### withMost()
+##### withLeast()
 It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::find()
         ->withLeast(Post::class)
         ->limit(5)
         ->get();
-//returns users that has least number of post. 
+//returns 5 users that has least number of post. 
 ```
-##### withMost()
-It gets the records from first table whose id has mot appered in the second table in a one to many and a many to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+##### withOut()
+It gets the records from first table whose id has not appeared in the second table in a one to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result. You can also limit, paginate, etc.
 ```php
 $user = User::find()
         ->withOut(Post::class)
-        ->limit(5)
+        ->get();
+//returns users that has no post. 
+```
+##### withThrough()
+It takes in three parameters; table name , optional where clause and selected feilds. 
+It will add all the records that have user_id form the post table to the corresponding record in the result. This happens in a many to many relationship.
+```php
+$user = Teacher::find()
+        ->withOut(Course::class)
+        ->get();
+//returns users that has no post. 
+```
+##### attachThrough()
+It takes in three parameters; table name , optional where clause and selected feilds. 
+It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
+```php
+$user = Course::find()
+        ->withOut(Teacher::class)
         ->get();
 //returns users that has no post. 
 ```
@@ -853,7 +901,7 @@ $user = User::find()
 #### join().
 
 Earlier we looked at joins but we were able to join only two tables using the static methods, now lets join more than two tabes.
-This are the different types of joins which are avaiable;
+These are the different types of joins which are avaiable;
 
 - join() 
 - innerJoin()
@@ -902,15 +950,11 @@ The where clause is passed as a parameter in the following methods.
 - ::deleteMany()
 - ::countRecords()
 - ::exist()
-- ::findBypk()
+- ::find()
 
-you can also chain the where() method on the following methods
+You can also chain the where() method on the following methods
 - ::find()
 - ::table()
-- ::findBypk()
-- ::hasMany()
-- ::hasOne()
-- ::hasManyThrough()
 
 **It can be passed in the following ways.**
 
@@ -931,15 +975,15 @@ The above code will return a single record whose primary id is 2.
 When you pass an associative array to methods like **findOne()** or **all()**, the array generate the query as bellow
 
 ```php
-   $result = User::all(["user_id"=>5])
+   $result = User::all(["user_id"=>5]);
    //sql = SELECT * FROM user WHERE user_id = 5
    //OR
-   $result = User::all(["user_id"=>5, "name"=>"tom"])
+   $result = User::all(["user_id"=>5, "name"=>"tom"]);
    //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
    //OR
    $result = Posts::find()
             ->where(["user_id"=>5, "name"=>"tom"])
-            ->get()
+            ->get();
    //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
 ```
 
@@ -948,27 +992,27 @@ When you pass an associative array to methods like **findOne()** or **all()**, t
 Sometimes you want to apply operators like <, >, <=, >=, =, like, etc. this is done the following ways
 
 ```php
-   $result = User::all(["user_id"=>['$lt'=>5]])
+   $result = User::all(["user_id"=>['$lt'=>5]]);
    //sql = SELECT * FROM user WHERE user_id < 5
    //OR
    $result = User::all([
        "user_id"=>[':lt'=>5],
        "age"=>[':gt'=>30],
-    ])
+    ]);
    //OR
    $result = User::all([
        "email"=>"tom@gmail.com"
        "user_id"=>[':lt'=>5],
        "age"=>[':gt'=>30],
-    ])
+    ]);
    //sql = SELECT * FROM users WHERE email = tom@gmail.com AND user_id < 5 AND age > 30
 ```
 
 Instead of using ':', you can use '$', for example, the output of this code is the same.
 
 ```php
-   $result = User::all(["user_id"=>['$lt'=>5]])
-   $result = User::all(["user_id"=>[':lt'=>5]])
+   $result = User::all(["user_id"=>['$lt'=>5]]);
+   $result = User::all(["user_id"=>[':lt'=>5]]);
    //Both will output
    //sql = SELECT * FROM user WHERE user_id < 5
 ```
@@ -984,7 +1028,7 @@ This will only write queries in which the where clause is separated by AND.
            'age'=>[':gt'=>30],
            'phone'=>3 333 333 333
           ]
-        ])
+        ]);
    //sql = SELECT * FROM user WHERE user_id < 5 AND age >30 AND phone = 3 333 333 333
 ```
 ##### 5. Passing associative array where key is $or or :or.
@@ -998,7 +1042,7 @@ This will only write queries in which the where clause is separated by OR.
           'age'=>[':gt'=>30],
           'phone'=>3 333 333 333
         ]
-      ])
+      ]);
    //sql = SELECT * FROM user WHERE user_id < 5 OR age > 30 OR phone = 3 333 333 333
    
    $result = User::all([
@@ -1008,7 +1052,7 @@ This will only write queries in which the where clause is separated by OR.
            'age'=>[':gt'=>30],
            'phone'=>3 333 333 333
           ]
-        ])
+        ]);
    /*
    sql = SELECT * FROM user 
     WHERE (name = tom AND email = tom@gmai.com) 
@@ -1029,7 +1073,7 @@ This will negate the entire :and.
            'age'=>[':gt'=>30],
            'phone'=>3 333 333 333
            ]
-        ])
+        ]);
     /*
    sql = SELECT * FROM user 
     WHERE NOT (
@@ -1043,7 +1087,7 @@ This will negate the entire :and.
           "name" => "tom",
           "user_id"=>['$lt'=>5],
         ]
-      ])
+      ]);
     /*
    sql = SELECT * FROM user 
     WHERE NOT (name = tom AND user_id < 5 )
@@ -1061,7 +1105,7 @@ This will negate the entire :nor.
            'age'=>[':gt'=>30],
            'phone'=>3 333 333 333
           ]
-        ])
+        ]);
     /*
    sql = SELECT * FROM user 
     WHERE NOT (
@@ -1075,7 +1119,7 @@ This will negate the entire :nor.
           "name" => "tom",
           "user_id"=>['$lt'=>5],
         ]
-      ])
+      ]);
     /*
    sql = SELECT * FROM user 
     WHERE NOT (name = tom OR user_id < 5 )
@@ -1083,7 +1127,7 @@ This will negate the entire :nor.
   ```
 The same way, putting n just after $ or : in the operator will negate that part of the query,
 ```php
-     $result = Users::all(["name" => "tom","user_id"=>['$nlt'=>5]])
+     $result = Users::all(["name" => "tom","user_id"=>['$nlt'=>5]]);
     /*
    sql = SELECT * FROM users
     WHERE name = tom AND NOT (user_id < 5 ))
@@ -1097,7 +1141,7 @@ $result = Users::all(["name" => "joyce","_name"=>"tom"])
 $result = Users::all([':or'=>[
                     "name" => "tom",
                     "_name"=>"daniel", 
-                    "__name"=>"loy"]])
+                    "__name"=>"loy"]]);
 // sql = SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
 
 //Alternatively
@@ -1106,7 +1150,7 @@ $result = Users::find()
                     "name" => "tom",
                     "_name"=>"daniel", 
                     "__name"=>"loy"]])
-                    ->get()
+                    ->get();
 // sql = SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
 
 ```
@@ -1154,15 +1198,15 @@ One user has one credit card and a credit card belongs to one user.
 To establish a **One To One relationship** here , you have to create one function in the Users class and CreditCards calss defination as shonw below.
 
 ```php
- $card = User::findByPk(4)
+ $card = User::find(4)
         ->hasOne(CreditCard::class)
-        ->get()
+        ->get();
 // returns one creditcard or false
 
 //and also
- $card = CreditCards::findByPk(4)
+ $card = CreditCards::find(4)
         ->belongsToOne(User::class)
-        ->get()
+        ->get();
 // returns one user or false
 ```
 
@@ -1170,15 +1214,15 @@ To establish a **One To One relationship** here , you have to create one functio
 
 The code will be as below.
 ```php
-$card = User::findByPk(4)
+$card = User::find(4)
         ->hasMany(Post::class)
-        ->get()
+        ->get();
 // returns array of post records
 
 // and also
-$Post = Post::findByPk(4)
+$Post = Post::find(4)
         ->belongsToOne(User::class)
-        ->get()
+        ->get();
 // returns a user or false
 ```
 #### 3. Many To Many relationship.
@@ -1210,10 +1254,10 @@ public function __construct() {
 }
 
 //Intermediate table
-class Teachers_Courses extends Model{
+class TeachersCourses extends Model{
 
   public function __construct() {
-    Schema::create(Teachers_Courses::class, function(Table $table){
+    Schema::create(TeachersCourses::class, function(Table $table){
       $table->id();
       $table->foriegnKey('courses_id');
       $table->foriegnKey('teachers_id');
@@ -1226,17 +1270,17 @@ Each time you create a teacher or a course remember to update the intermediate t
 **Let's** define the relationship.
 
 ```php
- $card = Teacher::findByPk(4)
+ $card = Teacher::find(4)
         ->hasManyMany(Courses::class)
-        ->get()
+        ->get();
 // returns one user or false
 ```
-***NB*** On to any relationship, you can chain any valid method chain exept ->findByPk()
+***NB*** On to any relationship, you can chain any valid method chain exept ->find()
 ```php
-$post = Users::findByPk(2)
+$post = Users::find(2)
         ->hasMany(Post::class)
         ->select('post_id,title, post')
-        ->orderBy()
+        ->orderBy('age')
         ->where(['title'=>['$like'=>'%computer']])
         ->limit(10)
         ->get();
