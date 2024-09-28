@@ -3,11 +3,6 @@
 This is PHP ORM for interacting with relational databases. It supports only Sqlite, Mysql, Sqlserver and Postgresql databases.
 It allows us to keep oursevles within only PHP code instead of switching between sql and PHP code.
 
-## Installation.
-
-```bash
-composer require ongom/dite-orm
-```
 ### sample usage
 ```php
 User::create(['user'=>'john doe']); //creating a user
@@ -25,6 +20,12 @@ DB::table('blog_post')->find()
   ->limit(3)
   ->select('title, post_body')
   ->get();
+```
+
+## Installation.
+
+```bash
+composer require ongom/dite-orm
 ```
 
 ### Setup.
@@ -98,28 +99,28 @@ Incase you don't want to add all the connetion details directly to the .env file
 
 ```php
   Model::setup([
-'DRIVER' => 'sqlite',
-'DATABASE_NAME' => 'schooldb',
-'RUN_SCHEMA' => 1,
-'APP_PASSWORD' => 'rqae hrue bili alru',
-'LOGGER' => 1,
-'SQL_COLOR' => ':3f2',
-'NONSQL_COLOR' = ':f3fb'
-'SQL_BG' = 'red'
-'SEPARATOR' = 'white'
+  'DRIVER' => 'sqlite',
+  'DATABASE_NAME' => 'schooldb',
+  'RUN_SCHEMA' => 1,
+  'APP_PASSWORD' => 'rqae hrue bili alru',
+  'LOGGER' => 1,
+  'SQL_COLOR' => ':3f2',
+  'NONSQL_COLOR' = ':f3fb'
+  'SQL_BG' = 'red'
+  'SEPARATOR' = 'white'
 ])
 
 // And also
   Schema::setup([
-'DRIVER' => 'sqlite',
-'DATABASE_NAME' => 'schooldb',
-'RUN_SCHEMA' => 1,
-'APP_PASSWORD' => 'rqae hrue bili alru',
-'IS_DEVMODE' => 1,
-'SQL_COLOR' => ':3f2',
-'NONSQL_COLOR' = ':f3fb'
-'SQL_BG' = 'red'
-'SEPARATOR' = 'white'
+  'DRIVER' => 'sqlite',
+  'DATABASE_NAME' => 'schooldb',
+  'RUN_SCHEMA' => 1,
+  'APP_PASSWORD' => 'rqae hrue bili alru',
+  'IS_DEVMODE' => 1,
+  'SQL_COLOR' => ':3f2',
+  'NONSQL_COLOR' = ':f3fb'
+  'SQL_BG' = 'red'
+  'SEPARATOR' = 'white'
 ])
 ```
 
