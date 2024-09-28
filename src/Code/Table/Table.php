@@ -17,10 +17,10 @@ class Table{
     Protected $conn;
     Protected $sqlite_engeine = false;
 
-    public function __construct($table_name=''){
+    public function __construct($table_name='', $setup){
         $this->table_name = strtolower($table_name);
         $this->BuildColumn = new FieldBuilder(); 
-        $this->conn = new Connection();
+        $this->conn = new Connection($setup);
     }
   //Running the query
     public function migreate(){
@@ -63,19 +63,19 @@ class Table{
     }
     //Varible character
     public function string(string $name, int $length=255){
-        $Text  = "_*_$name VARCHAR($length) ";
+        $Text  = "_*_{$this->conn->renameTable($name)} VARCHAR($length) ";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Text
     public function text(string $name, int $size=65535){
-        $Text  = "_*_$name TEXT($size) ";
+        $Text  = "_*_{$this->conn->renameTable($name)} TEXT($size) ";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //long Text
     public function longText(string $name){
-        $Text  = "_*_$name LONGTEXT ";
+        $Text  = "_*_{$this->conn->renameTable($name)} LONGTEXT ";
         $this->BuildColumn->Build($Text);
         return $this;
     }
@@ -88,9 +88,9 @@ class Table{
         }
         $Text  = null;
         if($this->conn->env()['DRIVER']===trim('sqlite')){
-            $Text = "_*_$name TEXT CHECK($name IN ($result) ) ";
+            $Text = "_*_{$this->conn->renameTable($name)} TEXT CHECK($name IN ($result) ) ";
         }else{
-            $Text  = "_*_$name ENUM($result) ";
+            $Text  = "_*_{$this->conn->renameTable($name)} ENUM($result) ";
         }
         $this->BuildColumn->Build($Text);
         return $this;
@@ -98,54 +98,65 @@ class Table{
     //Integer
     public function int(string $name){
         $INT = "INT";
-        $Text  = "_*_$name $INT";
+        $Text  = "_*_{$this->conn->renameTable($name)} $INT";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Integer
     public function unsigned(string $name){
-        $Text  = "_*_$name UNSIGNED";
+        $Text  = "_*_{$this->conn->renameTable($name)} UNSIGNED";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Big Integer
     public function bigInt(string $name){
-        $Text  = "_*_$name BIGINT";
+        $Text  = "_*_{$this->conn->renameTable($name)} BIGINT";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Boolean
     public function boolean(string $name){
-        $Text  = "_*_$name BOOLEAN";
+        $Text  = "_*_{$this->conn->renameTable($name)} BOOLEAN";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Float
     public function float(string $name, int $p=6){
-        $Text  = "_*_$name FLOAT($p)";
+        $Text  = "_*_{$this->conn->renameTable($name)} FLOAT($p)";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Double
     public function double(string $name, int $size=6, int $d=4){
-        $Text  = "_*_$name DOUBLE($size, $d)";
+        $Text  = "_*_{$this->conn->renameTable($name)} DOUBLE($size, $d)";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Decimal
     public function decimal(string $name, int $size=65, int $d=0){
-        $Text  = "_*_$name DECIMAL($size, $d)";
+        $Text  = "_*_{$this->conn->renameTable($name)} DECIMAL($size, $d)";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //Year
     public function year(int $name){
-        $Text  = "_*_$name YEAR";
+        $Text  = "_*_{$this->conn->renameTable($name)} YEAR";
         $this->BuildColumn->Build($Text);
         return $this;
     }
     //*************************************************************************** *
     // CONSTRIAN
+    //For allowing primary key values
+    public function primarykey(){
+        $this->BuildColumn->Build(' PRIMARY KEY');
+        return $this;
+    }
+    //For allowing primary key values
+    public function autoincrement(){
+        $auto = $this->conn->env()['DRIVER']===trim('sqlserver')?' IDENTITY(1,1)':' AUTOINCREMENT';
+        $this->BuildColumn->Build($auto);
+        return $this;
+    }
     //For allowing null values
     public function notnull(){
         $this->BuildColumn->Build(' NOT NULL');
@@ -154,6 +165,12 @@ class Table{
     
     //For integer values
     public function unique(){
+        $this->BuildColumn->Build(' UNIQUE');
+        return $this;
+    }
+    
+    //For integer values
+    public function check(){
         $this->BuildColumn->Build(' UNIQUE');
         return $this;
     }
@@ -261,9 +278,4 @@ class Table{
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP $auto_update";
         return $this;
     }
-
-   
-
-
-
 }

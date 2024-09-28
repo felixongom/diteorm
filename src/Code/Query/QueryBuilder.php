@@ -1,9 +1,18 @@
 <?php
 namespace Dite\Query;
+
+use Dite\DB\Connection;
+
 class QueryBuilder{
     public $SET ='';
     public $WHERE = null;
     private $PREPARED_VALUES = [];
+    private $instance = null;
+
+    public function __construct()
+    {
+        $this->instance = new Connection();
+    }
     public function getPreparedValues(){
         return count($this->PREPARED_VALUES)===0?null:$this->PREPARED_VALUES;
     }
@@ -23,8 +32,7 @@ class QueryBuilder{
 
     //* ***************************************************************************************
     //setting values for updating
-    public function where(string $table_name = null,  array|int|null $where_selector = []){
-        $where_selector = $where_selector===null?[]:$where_selector;
+    public function where(string $table_name = null,  array|int $where_selector = []){
         //case of interger value
         if(is_int($where_selector)){
             $this->whereSetId($table_name);
@@ -99,7 +107,7 @@ class QueryBuilder{
 
     //renaming the id coumn
     public function idColName(string $str){
-        return strtolower($str.'_id');
+        return $this->instance->renameTable($str).'_id';
     }
 
     private function whereSetId(string $table_name){
@@ -132,7 +140,6 @@ class QueryBuilder{
     private function checkNor($nor){
         $_nor = strtolower($nor);
         return $_nor==='$nor' || $_nor===':nor' ;
-        
     }
     private function checkNand($nand){
         $nand = strtolower($nand);

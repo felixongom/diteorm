@@ -7,8 +7,31 @@ use PDO;
 use PDOException;
 
 class Model{
+
+    private static $setup = null;
     protected $id_for_one_record;
     private $sql = null;
+    private $pk_sql = null;
+    private $sql_hasmany = null;
+    private $sql_hasone = null;
+    private $sql_belongs_to = null;
+    private $sql_has_many_through = null;
+    private $belongs_to_ = null;
+    private $has_many_through_table = null;
+    private $sql_blongs_to_many = null;
+    private $activate_findby_pk = false;
+    // 
+    private $with_one_array = [];
+    private $with_array = [];
+    private $attach_array = [];
+    private $with_through_array = [];
+    private $attach_through_array = [];
+    // 
+    private $with_most_data = [];
+    private $with_least = false;
+    private $without = false;
+    // 
+    private $sql_with_most = null;
     private $prepared_values = [];
     private $select = '*';
     private $table_name = null;
@@ -25,30 +48,31 @@ class Model{
     private $first_table_to_join = '';
     private $second_table_to_join = '';
     private $join_result_string = '';
-    private $result_by_id;
-    private $child_table;
     private $___idname;
     private $activate_hasone;
 
     private static $passed_table_name;
     private $belongs_to_table;
     // 
-    public function __construct($table = null)
-    {
-        self::$passed_table_name = $table;
+    public function __construct($table = null){   
+        self::$passed_table_name = self::$passed_table_name?:$table;
     }
-
+    // 
+    public static function setup(array $setup_array){
+        var_dump(self::$setup);
+        self::$setup = $setup_array;
+    }
     //organising some key variables into on object for static methods
-    private static function maker($where_selector = [], $select = '*'){
-        $instance = new Connection();
+    private static function maker($where = [], $select = '*'){
+        $instance = new Connection(self::$setup);
         $builder = new QueryBuilder();
         $genResult = [];
-        $table_name = get_called_class();
+        $table_name = $instance->renameTable(self::$passed_table_name??get_called_class());
         // 
         $genResult['instance'] = $instance;
         $genResult['builder'] = $builder;
-        $genResult['table_name'] = get_called_class();
-        $genResult['where'] = $builder->where($table_name, $where_selector);
+        $genResult['table_name'] = $table_name;
+        $genResult['where'] = $builder->where($table_name, $where??[]);
         $genResult['prepared_values'] = $builder->getPreparedValues();
         $genResult['star'] = self::selector($select);
         $instance = null;
@@ -56,12 +80,12 @@ class Model{
     }
     // ******************************************************************************************
     //checks if there is some result, return booleanall the record
-     public static function exist(int|string|array $where_selector=[]):bool{
+     public static function exist(int|string|array $where=[]):bool{
         $result = null;
-        if(is_int($where_selector) || is_string($where_selector)){
-            $result = self::findById($where_selector);
+        if(is_int($where) || is_string($where)){
+            $result = self::findById($where);
         }else{
-            $result = self::findOne($where_selector);
+            $result = self::findOne($where);
         }
         return $result?true:false;
     }
@@ -70,122 +94,93 @@ class Model{
         try{
             $maker = self::maker();
             $sql = "DROP TABLE $maker->table_name";
-            // 
             $stmt = $maker->instance->connect()->prepare($sql);
             $stmt->execute();
             // Close connection
             return true;
         }catch(PDOException $e){
-            // print_r($e);
             return false;
         }
     }
     //fetches all the record
-     public static function all(array $where_selector = [], array|string $select = '*'){
-        $maker = self::maker($where_selector, $select);
+     public static function all(array $where = null, array|string $select = '*'){
+        $maker = self::maker($where??null, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $results = $stmt->fetchAll($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $results??[];
+        return self::sql($sql, $maker->prepared_values);
     }
     //fetches one record by id
-    public static function findById(int|string $where_selector, array|string $select = '*'){
-        $maker = self::maker($where_selector, $select);
-        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $result;
+    public static function findById(int|string|array $where, array|string $select = '*'){
+        if(is_array($where) && is_int(array_keys($where)[0])){
+            $maker = self::maker($where, $select);
+            $where = [$maker->table_name.'_id'=>[':in'=>$where]];
+            return self::all($where, $maker->star);
+        }else{
+            $maker = self::maker($where, $select);
+            $sql = "SELECT $maker->star FROM $maker->table_name $maker->where LIMIT 1";
+            return self::sql($sql,$maker->prepared_values, false);
+        }
+        
     }
     //fatches on record that matches the query
-    public static function findOne(array $where_selector=[], array|string $select = '*'){
-        $maker = self::maker($where_selector, $select);
+    public static function findOne(array $where = null, array|string $select = '*'){
+        $maker = self::maker($where??null, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where LIMIT 1";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $result;
+        return self::sql($sql, $maker->prepared_values, false);
     }
     //fetches the last record that matches the query
-    public static function last(array $where_selector = [], array|string $select = '*'){
-        $maker = self::maker($where_selector, $select);
-        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY {$maker->builder->idColName($maker->table_name)} DESC LIMIT 1";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $result;
+    public static function last(array $where = null, array|string $select = '*'){
+        $maker = self::maker($where??null, $select);
+        $id_column = $maker->table_name.'_id';
+        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column DESC LIMIT 1";
+        return self::sql($sql, $maker->prepared_values, false);
+        
     }
     //fetches the first record that matches the query
-    public static function first(array $where_selector = [], array|string $select = '*'){
-        $maker = self::maker($where_selector, $select);
-        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY {$maker->builder->idColName($maker->table_name)} LIMIT  1";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $result;
+    public static function first(array $where = null, array|string $select = '*'){
+        $maker = self::maker($where??null, $select);
+        $id_column = $maker->table_name.'_id';
+        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column LIMIT  1";
+        return self::sql($sql, $maker->prepared_values, false);
     }
     //delete by id
-    private static function doDelete(int|string|array $where_selector){
-        $maker = self::maker($where_selector);
+    private static function doDelete(int|string|array $where){
+        $maker = self::maker($where);
         $deleted_record = true;
         // 
-        if(is_int($where_selector) || is_string($where_selector)){
-            $deleted_record = self::findById($where_selector);
+        if(is_int($where) || is_string($where)){
+            $deleted_record = self::findById($where);
         }
         // 
         if(!$deleted_record){
             return false;
         }
         $sql = "DELETE FROM $maker->table_name $maker->where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-
-        return $result && (is_int($where_selector)||is_string($where_selector))?$deleted_record:false;
+        self::sql($sql, $maker->prepared_values, false);
+        return (is_int($where)||is_string($where))?$deleted_record:false;
     }
     //delete by id
-    public static function delete(int|string $where_selector){
-        return self::doDelete($where_selector);
+    public static function delete(int|string|array $where){
+        if(is_array($where) && is_int(array_keys($where)[0])){
+            foreach ($where as $id) {
+                self::doDelete($id);
+            }
+        }elseif(is_array($where)){
+            self::doDelete($where);
+        }else{
+            return self::doDelete($where);
+        }
     }
-    //delete many that matches the query
-    public static function deleteMany(array $where_selector):void{
-        self::doDelete($where_selector);
-     }
     //count records
-    public static function countRecords(array $where_selector = [], array|string $column = '*'):int{
-        $maker = self::maker($where_selector);
-        $sql = "SELECT COUNT($column) AS total FROM $maker->table_name $maker->where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $result = $stmt->fetch($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return $result;
+    public static function countRows(array $where = []):int{
+        $maker = self::maker($where);
+        $id_column = $maker->table_name.'_id';
+        $sql = "SELECT COUNT($id_column) AS total FROM $maker->table_name $maker->where";
+        return self::sql($sql, $maker->prepared_values, false);
+
     }
 
     // ******************************************************************************************
     //creates new record
-
      public static function create(array $data){
         if (count($data)==0) return;
         $instance = new Connection();
@@ -203,7 +198,7 @@ class Model{
     }
     //the actual function that adds to the database
     private static function addAndPersistsToDb(array $data, $instance){
-        $table_name = strtolower(get_called_class()); //table name
+        $table_name = $instance->renameTable(get_called_class()); //table name
         $conn = $instance->connect();
         $isSqlite = $instance->env()['DRIVER'] === 'sqlite';
         $time_colmn_exist = $instance->includeTime($table_name, 'created_at'); //boolean
@@ -220,12 +215,12 @@ class Model{
         // 
         if($isSqlite && $time_colmn_exist){ //is sqlite and timestamp column exist
             $qnmarks = '('. str_repeat('?,', count($data) + 2).'?)'; //get question marks
-            $columns = strtolower($table_name.'_id, ').join(", ",array_keys($data)).", $timestamp";
+            $columns = $table_name.'_id, '.join(", ",array_keys($data)).", $timestamp";
             $SQL = "INSERT INTO $table_name ($columns) VALUES $qnmarks";
             $prepared_values = [$max_id, ...$values, ...$createdat_val];
         }elseif($isSqlite && !$time_colmn_exist){//is sqlite and timestamp column does not exist
             $qnmarks = '('. str_repeat('?,', count($data)).'?)'; //get question marks
-            $columns = strtolower($table_name.'_id, ').join(", ",array_keys($data));
+            $columns = $table_name.'_id, '.join(", ",array_keys($data));
             $SQL = "INSERT INTO $table_name ($columns) VALUES $qnmarks";
             $prepared_values = [$max_id, ...$values];
         }else{//is other DRIVER and timestamp column exist
@@ -255,8 +250,8 @@ class Model{
     }
     // ******************************************************************************************
     //updates records all the record
-     private static function doUpdate(int|string|array $where_selector, array $values_to_set){
-        $maker = self::maker($where_selector);
+     private static function doUpdate(int|string|array $where, array $values_to_set){
+        $maker = self::maker($where);
         $values = array_values($values_to_set);
         $set = $maker->builder->updateSetValues($values_to_set); 
         $sql = "UPDATE $maker->table_name SET $set $maker->where";
@@ -266,56 +261,66 @@ class Model{
         // Fetch the records so we can display them in our template.
         $stmt->fetch($maker->instance->fetchMode());
         $maker->instance->debargPrint($sql, [...$values,...$maker->prepared_values], null, true);
-        $res = is_int($where_selector)||is_string($where_selector)?self::findById($where_selector):true;
+        $res = is_int($where)||is_string($where)?self::findById($where):true;
         return $res;
     } 
     //updates records all the record
-     public static function update(int|string $where_selector, array $values_to_set){
-        return self::doUpdate($where_selector, $values_to_set);
+     public static function update(int|string $where, array $values_to_set){
+         return self::doUpdate($where, $values_to_set);
     } 
-    //updats records all the record
-    public static function updateMany(array $where_selector, array $values_to_set){
-         return self::doUpdate($where_selector, $values_to_set);
-    } 
+
     //Join section
     //join
-    private static function doJoins($second_table, $type_of_join, $select='*',$where = []){
+    private static function doJoins($second_table, $join_condition, $type_of_join, $select='*',$where = []){
+        $sql = null;
         $maker = self::maker($where, $select);
-        $sql = "SELECT $maker->star FROM $maker->table_name $type_of_join $second_table ON 
-        $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)} $where";
-        // 
-        $stmt = $maker->instance->connect()->prepare($sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $results = $stmt->fetchAll($maker->instance->fetchMode());
-        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
-        return count($results)===0?[]:$results;
+        if($join_condition){
+            $second_table = $maker->instance->renameTable($second_table);
+            // 
+            $join_result_string = "$type_of_join $second_table ON $join_condition "??null;
+            $sql = "SELECT $maker->star FROM $maker->table_name $join_result_string $maker->where";
+        }else{
+            $sql = "SELECT $maker->star FROM $maker->table_name $type_of_join $second_table ON 
+            $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)} $maker->where";
+        }
+        return self::sql($sql, $maker->prepared_values);
     }
     
     //join
-    public static function joins(string $second_table, array $where = [], array|string $select = '*'){
-        return self::doJoins($second_table, "INNER JOIN", $select, $where); 
+    public static function joins(string $second_table, string $join_condition = null, array $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "JOIN", $select, $where); 
     }
     //innerjoin
-    public static function innerJoins(string $second_table, $where = [], array|string $select = '*'){
-        return self::doJoins($second_table, "INNER JOIN", $select, $where);
+    public static function innerJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "INNER JOIN", $select, $where);
     }
     //left joins
-    public static function leftJoins(string $second_table, $where, array|string $select = '*'){
-        return self::doJoins($second_table, "LEFT JOIN", $select, $where);
+    public static function leftJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "LEFT JOIN", $select, $where);
     }
     //right joins
-    public static function rightJoins(string $second_table, $where = [], array|string $select = '*'){
-        return self::doJoins($second_table, "RIGHT JOIN", $select, $where);
+    public static function rightJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "RIGHT JOIN", $select, $where);
+    }
+    //right outer joins
+    public static function rightOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
+    }
+    //right outer joins
+    public static function leftOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //fetches all the record
-    public static function sql(string $sql, array $values = []){
+    public static function sql(string $sql, array $values = null, $return_many = true){
+        $values = null??[];
         $maker = self::maker();
         $values = $values===[]?null:$values;
         $stmt = $maker->instance->connect()->prepare($sql);
         $stmt->execute($values);
         // Fetch the records so we can display them in our template.
-        $results = $stmt->fetchAll($maker->instance->fetchMode());
+        $results = $return_many?
+                    $stmt->fetchAll($maker->instance->fetchMode()):
+                    $stmt->fetch($maker->instance->fetchMode());
         $maker->instance->debargPrint($sql, $values, null, true);
         return $results;
     }
@@ -323,28 +328,27 @@ class Model{
     // ******************************************************************************************
     // ******************************************************************************************
     // non static methods
-    public function ___f($child_table = null){
-        $maker = self::maker([]);
+    public function ___f(){
+        $maker = self::maker();
         //getting the table name for both Modal instanse and the custom model extnding
-        $table_name = self::$passed_table_name?: $maker->table_name;
-        $this->table_name = $child_table?:$table_name;
-        $this->child_table = $child_table;
-        //
+        $table_name = $maker->instance->renameTable(self::$passed_table_name)?: $maker->table_name;
+        $this->table_name = $table_name;
         $this->first_table_to_join = $table_name;
         $this->activate_find = true;
         return $this;
     }
     // non static methods
-    public function where(array $where_selector = []){
-        if($this->___idname && is_array($where_selector)) {
-            $idcolName = strtolower($this->table_name.".".$this->___idname)."_id";
+    public function where(array $where = []){
+        if(is_array($where)) {
+            $idcolName = "$this->table_name.$this->___idname"."_id";
             // 
-            if(array_key_exists($idcolName, $where_selector)){
-                unset($where_selector[$idcolName]);
+            if(array_key_exists($idcolName, $where)){
+                unset($where[$idcolName]);
             }
         }
         // 
-        $maker = self::maker($where_selector);
+        
+        $maker = self::maker($where);
         //getting the table name for both Modal instanse ans the custom model extnding
         $this->where .= $maker->where;
         //getting the table name for both Modal instanse and the custom model extnding
@@ -355,96 +359,78 @@ class Model{
     public function __ByPk(int|string $primary_key){
         $maker = self::maker($primary_key);
         //getting the table name for both Modal instanse ans the custom model extnding
-        $table_name = self::$passed_table_name?: $maker->table_name;
-        $this->___idname = strtolower($table_name);
-        $where = str_replace('dite\model\model_id', strtolower($table_name.'_id'), $maker->where);
+        $this->table_name = $maker->instance->renameTable(self::$passed_table_name?: $maker->table_name);
+        $this->___idname = $this->table_name;
+        $where = str_replace('dite\_model\_model_id', $this->table_name.'_id', $maker->where);
         $this->id_for_one_record = $primary_key;
-        $this->sql = "SELECT * FROM $table_name $where LIMIT 1";
         // 
-        $stmt = $maker->instance->connect()->prepare($this->sql);
-        $stmt->execute($maker->prepared_values);
-        // Fetch the records so we can display them in our template.
-        $stm_result = $stmt->fetch($maker->instance->fetchMode());
-        $this->result_by_id = $stm_result?:'null';
-        $maker->instance->debargPrint($this->sql, $maker->prepared_values, null, true);
+        $id_col = $this->table_name.'_id';
+        $this->sql = "SELECT * FROM $this->table_name $where LIMIT 1";
+        $this->pk_sql = "SELECT $id_col FROM $this->table_name $where LIMIT 1";
+        $this->activate_findby_pk = true;
         return $this;
     }
-    // non static methods to paginate
-    // public function ___p(){
-    //     $maker = self::maker([]);
-    //     //getting the table name for both Modal instanse and the custom model extnding
-    //     $table_name = self::$passed_table_name?: $maker->table_name;
-    //     $this->table_name = $table_name;
-    //     //
-    //     $this->first_table_to_join = $table_name;
-    //     $this->activate_paginating = true;
-    //      $this->prepared_values = $maker->prepared_values;
-    //     return $this;
-    // }
     // ******************************************************************************************
     // ******************************************************************************************
     // ******************************************************************************************
     
     //do join
-    private function doJoin(string $second_table, $type_of_join = "INNER JOIN"){
-        $maker = self::maker();
-        //getting the table name for both Modal instanse ans the custom model extnding
-        $table_name = self::$passed_table_name;
-        // 
-        $this->called_class = $table_name;
-        $this->first_table_to_join = $this->first_table_to_join?:$this->second_table_to_join;
-        $this->second_table_to_join = $second_table;
-        $this->join_result_string .= "$type_of_join $this->second_table_to_join ON $this->first_table_to_join.{$maker->builder->idColName($this->first_table_to_join)} = $this->second_table_to_join.{$maker->builder->idColName($this->first_table_to_join)} "??null;
-        // 
-        $this->first_table_to_join = $this->second_table_to_join;
+    private function doJoin(string $second_table, string $join_condition = null , $type_of_join = "INNER JOIN"){
+       $second_table = strtolower($second_table);
+        if($join_condition){
+            $this->join_result_string .= "$type_of_join $second_table ON $join_condition "??null;
         return $this;
+        }else{
+
+            $maker = self::maker();
+            //getting the table name for both Modal instanse ans the custom model extnding
+            $table_name = self::$passed_table_name;
+            // 
+            $this->called_class = $table_name;
+            $this->first_table_to_join = $this->first_table_to_join?:$this->second_table_to_join;
+            $this->second_table_to_join = $second_table;
+            $this->join_result_string .= "$type_of_join $this->second_table_to_join ON $this->first_table_to_join.{$maker->builder->idColName($this->first_table_to_join)} = $this->second_table_to_join.{$maker->builder->idColName($this->first_table_to_join)} "??null;
+            // 
+            $this->first_table_to_join = $this->second_table_to_join;
+            return $this;
+        }
     }
-    
-    //do join
-    private function doJoinOn( string $type_of_join, string $table, string $join_condition){
-        $this->join_result_string .= "$type_of_join $table ON $join_condition "??null;
-        return $this;
-    }
-    // join
-    public function join(string $second_table){
-        $this->doJoin($second_table, 'INNER JOIN');
-        return $this;
-    }
-    //inner join
-    public function innerJoin(string $second_table){
-        $this->doJoin($second_table, 'INNER JOIN');
+
+    public function join(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'JOIN' );
         return $this;
     }
     //inner join
-    public function leftJoin(string $second_table){
-        $this->doJoin($second_table, 'LEFT JOIN');
+    public function innerJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'INNER JOIN');
+        return $this;
+    }
+    //LEFT OUTER JOIN
+    public function letftOuterJoin(string $second_table,string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'LEFT OUTER JOIN');
+        return $this;
+    }
+    //right outer join
+    public function rightOuterJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'RIGHT OUTER JOIN' );
+        return $this;
+    }
+    //left OUTER join
+    public function leftOuterJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'LEFT OUTER JOIN');
         return $this;
     }
     //inner join
-    public function rightJoin(string $second_table){
-        $this->doJoin($second_table, 'RIGHT JOIN');
+    public function rightJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'RIGHT JOIN');
         return $this;
     }
-    // join
-    public function joinOn(string $table, string $join_condition){
-        $this->doJoinOn('INNER JOIN',$table, $join_condition);
+    //left join
+    public function leftJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'LEFT JOIN');
         return $this;
     }
-    //inner join
-    public function innerJoinOn(string $table, string $join_condition){
-        $this->doJoinOn('INNER JOIN',$table, $join_condition);
-        return $this;
-    }
-    //inner join
-    public function leftJoinOn(string $table, string $join_condition){
-        $this->doJoinOn('LEFT JOIN',$table, $join_condition);
-        return $this;
-    }
-    //inner join
-    public function rightJoinOn(string $table, string $join_condition){
-        $this->doJoinOn('RIGHT JOIN',$table, $join_condition);
-        return $this;
-    }
+
     // select som fields
     public function select(string|array $select = "*"){
         $_select = null;
@@ -504,87 +490,359 @@ class Model{
     // generate orderby
     public function orderBy(string|array $order_array){
         $i = 1;
-        foreach ($order_array as $key => $value) {
-            if(is_int($key)){
-                //it is plain array
-                $this->order_by.=$i < count($order_array)?"ORDER BY $value, ":"ORDER BY $value";
-            }elseif(is_string($key)){
-                // associative array
-                $_value = strtoupper($value);
-                $this->order_by.=$i<count($order_array)?"ORDER BY $key $_value, ":" ORDER BY $key $_value";                
-            }
-            $i++;
+        if(is_array($order_array)){
+
+            foreach ($order_array as $key => $value) {
+                if(is_int($key)){
+                    //it is plain array
+                    $this->order_by.=$i < count($order_array)?"ORDER BY $value, ":"ORDER BY $value";
+                }elseif(is_string($key)){
+                    // associative array
+                    $_value = strtoupper($value);
+                    $this->order_by.=$i<count($order_array)?"ORDER BY $key $_value, ":" ORDER BY $key $_value";                
+                }
+                $i++;
+            } 
+        }else{
+            $this->order_by.="ORDER BY $order_array";                
         }
         return $this;
     }
-    //custom userid
-    private function customWhere(){
-        $idcolName = strtolower($this->___idname);
-        echo $this->belongs_to_table;
-        $this->table_name = strtolower($this->child_table?:$this->table_name);
+    //custom WHERE
+    private function customWhere($id){
+        $idcolName = $this->___idname."_id";
+        $_where = str_replace("WHERE", "AND", $this->where);
+        
+        if($this->sql_hasmany && $this->where){
+            $this->where = str_replace('?',$id,"WHERE $idcolName = ( $this->pk_sql )"). " $_where";
+        }elseif($this->sql_hasmany){
+            $this->where = str_replace('?',$id,"WHERE $idcolName = ( $this->pk_sql )"). " $_where";
+        }elseif($this->sql_hasone){
+            $this->where = str_replace('?',$id,"WHERE $idcolName = ( $this->pk_sql )"). " $_where";
+        }elseif($this->sql_has_many_through || $this->sql_blongs_to_many){
+            $ther_other_table = $this->has_many_through_table."_id";
+            $this_other_table = self::$passed_table_name."_id";
+            $intermidiate_table = null;
+            // 
+            if($this->sql_has_many_through){
+                $intermidiate_table = self::$passed_table_name."_".$this->has_many_through_table;
+            }else{
+                $intermidiate_table = $this->has_many_through_table."_".self::$passed_table_name;
+            }
+            // 
+            $_sql_to_link_intemidiate = "SELECT $ther_other_table FROM $intermidiate_table WHERE $this_other_table = ? ";
+            $this->where = str_replace('?',$id,"WHERE $ther_other_table IN ( $_sql_to_link_intemidiate )"). " $_where";
+            // 
+            if($this->sql_has_many_through){
+                $this->sql_has_many_through = "$this->sql_has_many_through $this->where";
+            } else{
+                $this->sql_has_many_through = "$this->sql_blongs_to_many $this->where";
+            }
+        }
+        return $this;
+    }
+   
+    //with
+    public function withOne(string $table, array $where = null, string $select = '*'){
+        $with_one_table = $table;
+        $with_one_where = $where;
+        $with_one_select = $select;
+        $this->with_one_array = [...$this->with_one_array, [$with_one_table, $with_one_where??[], $with_one_select]];
+        return $this;
+    }
+    public function withAll(string $table, array $where = null, string $select = '*'){
+        $with_table = $table;
+        $with_where = $where;
+        $with_select = $select;
+        $this->with_array = [...$this->with_array,[$with_table, $with_where??[], $with_select]];
+        return $this;
+    }
+    public function attach(string $table, string $select = '*'){
+        $attach_table = $table;
+        $attach_select = $select;
+        $this->attach_array = [... $this->attach_array,[$attach_table, $attach_select]];
+        return $this;
+    }
+    // 
+    public function withThrough(string $table, string $select = '*'){
+        $with_through_table = $table;
+        $with_through_select = $select;
+        $this->with_through_array = [... $this->with_through_array,[$with_through_table, $with_through_select]];
+        return $this;
+    }
+    // 
+    public function attachThrough(string $table, string $select = '*'){
+        $attach_through_table = $table;
+        $attach_through_select = $select;
+        $this->attach_through_array = [... $this->attach_through_array,[$attach_through_table, $attach_through_select]];
+        return $this;
+    }
+    // 
+    private function appendWithToResult($result, $instance, $table_name, $with_one_array, bool $multiple_results){
+        if($result) return $result;
+        $maker = self::maker();
+        $table_name = $maker->instance->renameTable($table_name);
+        if(!$result) return $result;
+        if( is_array($result) && count(array_keys($result))){ //for array of records
+            //access individual record
+            $response = [];
+            foreach($result as $res){
+                $res =  $instance->isObjMode()? get_object_vars($res):$res;
+                $tie_to_main_table = $table_name."_id = ". $res[$table_name."_id"];
+                $res = $this->processWith($res, $multiple_results, $tie_to_main_table, $with_one_array, $maker);
+                $response =  [...$response, ($instance->isObjMode()? (object)$res:$res)];
+            }
+            return $response;
+        }else{ //for a single record
+            $result =  $instance->isObjMode()? get_object_vars($result):$result;
+            $tie_to_main_table = $table_name."_id = ". $result[$table_name."_id"];
+            $result = $this->processWith($result, $multiple_results, $tie_to_main_table, $with_one_array, $maker);
+            // 
+            return $instance->isObjMode()? (object)$result:$result;
+        }
+    }
+    // 
+    private function processWith($result, $many, $tie_to_main_table, $with_table, $maker){
+        foreach ($with_table as $one_array){// call the function that gets the database
+            $result[$maker->instance->renameTable($one_array[0])] = $this->queryAndReturnData($one_array, $many, $tie_to_main_table); 
+        }
+        return $result;
+    }
+    
+    // *************************************************************************************
+    private function queryAndReturnData($one_array, $many = false, $tie_to_main_table){
+        $maker = self::maker($one_array[1], $one_array[2]);
+        $table = $maker->instance->renameTable($one_array[0]);
+        $limit = $many?null:"LIMIT 1";
+        //custom where      
+        $_where = $maker->where?str_replace("WHERE", "AND", $maker->where):null;
+        $sql = "SELECT * FROM $table WHERE $tie_to_main_table $_where $limit";
         // 
-        if(!$this->activate_hasone){
-            $child_where = "WHERE ".$this->table_name.".".$idcolName."_id = ".$this->id_for_one_record;
-            $main_where = is_string($this->where)!==''?str_replace('WHERE', ' AND ', $this->where):$this->where;
-            // 
-            $this->where = $this->result_by_id?$child_where.$main_where : $this->where;
-            // 
+        $stmt = $maker->instance->connect()->prepare($sql);
+        $stmt->execute($maker->prepared_values);
+        // Fetch the records so we can display them in our template.
+        $results = $many?
+                    $stmt->fetchAll($maker->instance->fetchMode()):
+                    $stmt->fetch($maker->instance->fetchMode());
+        $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
+        return $results??null;
+    }
+
+    // *************************************************************************************
+    private function attachUpperLevelRecord($result, $instance, $table_name){
+        if(!$result || !count($result)) return $result;
+
+        $table_name = $instance->renameTable($table_name);
+        if(is_array($result) && count(array_keys($result))){
+            $response = [];
+            foreach ($result as $one_result) {
+                $one_result =  is_object($one_result)? get_object_vars($one_result):$one_result;
+                $response = [...$response, $this->processAttach($one_result)];
+            }
+            return $response;
+        }else{
+            $result =  is_object($result)? get_object_vars($result):$result;
+            $result = $this->processAttach($result);
+            return $result;
         }
     }
-    private function __belongsToOne(){
-        if($this->belongs_to_table){
-            $_result_by_id = (new Connection)->isObjMode()?get_object_vars($this->result_by_id):$this->result_by_id;
-            $refered_id = $_result_by_id[$this->belongs_to_table."_id"];
-            // echo $refered_id,  $this->belongs_to_table;
-            // print_r($_result_by_id);
-            $where = "WHERE $this->belongs_to_table"."_id = $refered_id";
-            $sql = "SELECT $this->select FROM $this->belongs_to_table $where LIMI";
-            // echo '((((((((((',$sql,'))))))))))))';
-            return $sql;
+    //
+    private function processAttach($result){
+        // Runn a loop to access each table being attached 
+        foreach ($this->attach_array as $one_array) {
+            $maker = self::maker();
+            $table = $maker->instance->renameTable($one_array[0]);
+            $where = $table."_id = ".$result[$table."_id"];
+            //
+            $sql = "SELECT $one_array[1] FROM $table WHERE $where LIMIT 1";
+            $result[$table] = self::sql($sql, null, false);
+        }
+        return $result;
+    }
+    // *************************************************************************************
+    private function appendWithThrough($result, $instance, $table_name){
+        $table_name = $instance->renameTable($table_name);
+        if(!$result) return $result;
+        if(is_array($result) && count(array_keys($result))){
+            $response = [];
+            foreach ($result as $one_result) {
+                $one_result =  $instance->isObjMode()? get_object_vars($one_result):$one_result;
+                $response = [...$response, $this->processThrough($one_result, $table_name, true)];
+            }           
+            return $response;
+        }else{
+            $result =  $instance->isObjMode()? get_object_vars($result):$result;
+            $result = $this->processThrough($result, $table_name, true);
+            return $result;
         }
     }
-    // generate column names
+    // 
+    private function attachThroughRecord($result, $instance, $table_name){
+        $table_name = $instance->renameTable($table_name);
+        if(!$result) return $result;
+        if(is_array($result) && count(array_keys($result))){
+            $response = [];
+            foreach ($result as $one_result) {
+                $one_result =  is_object($one_result)? get_object_vars($one_result):$one_result;
+                $response = [...$response, $this->processThrough($one_result, $table_name, false)];
+            }           
+            return $response;
+        }else{
+            $result =  $instance->isObjMode()? get_object_vars($result):$result;
+            $result = $this->processThrough($result, $table_name,false);
+            return $result;
+        }
+    }
+    // 
+    private function processThrough($result, $main_table, $is_with = true){
+        // Runn a loop to access each table being attached 
+        if(!$result) return $result;
+        $table_arrays = $is_with?$this->with_through_array:$this->attach_through_array;
+        
+        foreach ($table_arrays as $one_array) {
+            $maker = self::maker();
+            $table = $maker->instance->renameTable($one_array[0]);
+            $table_id = $table."_id";
+            $main_table_id = $main_table."_id";
+            // 
+            $intermidiat_table = $is_with?
+                                $maker->instance->renameTable($main_table)."_".$table:
+                                $table."_".$maker->instance->renameTable($main_table);
+                                // 
+            $where = $table_id." IN ( SELECT $table_id FROM  $intermidiat_table WHERE $main_table_id = $result[$main_table_id])";
+            // 
+            $sql = "SELECT $one_array[1] FROM $table WHERE $where";
+            $maker->instance->debargPrint($sql, null, null, true);
+            $result[$table] = self::sql($sql);
+        }
+        return $result ;
+    }
+    // *************************************************************************************
+    public function withMost(string $table_name){
+        $maker = self::maker();
+        $table_name = $maker->instance->renameTable($table_name);
+        $first_table_id = $this->table_name."_id";
+        $order = $this->with_least?'ASC':'DESC';
+        $sql = "SELECT $this->table_name.$first_table_id AS table_id, COUNT($this->table_name.$first_table_id) AS total_count 
+                FROM $table_name 
+                JOIN  $this->table_name 
+                ON $this->table_name.$first_table_id = $table_name.$first_table_id
+                GROUP BY $table_name.$first_table_id
+                ORDER BY total_count $order";
+        
+        $this->sql_with_most =  $sql;
+        return $this;
+    }
+    // 
+    public function withLeast(string $table_name){
+        $this->with_least = true;
+        return $this->withMost($table_name);
+    }
+    // 
+    public function withOut(string $table_name){
+        $this->without = true;
+        return $this->withMost($table_name);
+    }
+    // *************************************************************************************
+
+    // binging everything comes together
     public function get(){
-        // echo 'belongs_table ****',$this->belongs_to_table, ' passed_table ***',self::$passed_table_name;
         $self_limit = self::$limit;
         $self_skip = self::$skip;
-        //   
-        if(isset($this->result_by_id) && $this->result_by_id === 'null'){// it returns the array
-            if($this->___idname && $this->activate_hasone) return false;
-            return $this->___idname?[]:false;
-        }elseif(($this->result_by_id || $this->child_table) && !$this->table_name){//retrns sigle record bt is
-            
+        $maker = self::maker([]);
+        //  
+        if($this->activate_findby_pk && !($this->sql_hasmany || $this->sql_hasone || $this->sql_belongs_to || $this->sql_has_many_through || $this->sql_blongs_to_many)){// it returns the array found bypk
             $maker = self::maker($this->id_for_one_record);
-            //getting the table name for both Modal instanse ans the custom model extnding
-            $this->table_name = strtolower(self::$passed_table_name?: $maker->table_name);
-            //if this chin of child table is active
-            $where = str_replace('dite\model\model_id', strtolower($this->table_name .'_id'), $maker->where);
-            // 
-            $_sql = "SELECT $this->select FROM $this->table_name  $this->join_result_string $where LIMIT 1";
-            // $this->__belongsToOne();
-            // echo "<br>** $this->sql **";
-            // echo "<br>** {$this->__belongsToOne()} **";
-            $stmt = null;
-            if($this->belongs_to_table){ //refering to the parent table during
-                // echo "<br>**$this->where **";
-                $stmt = $maker->instance->connect()->prepare($this->__belongsToOne());
-                $stmt->execute();
-            }else{
-                $stmt = $maker->instance->connect()->prepare($_sql);
-                $stmt->execute($maker->prepared_values);
-            }
+            $sql = str_replace('*', $this->select, $this->sql);
+            $stmt = $maker->instance->connect()->prepare($sql);
+            $stmt->execute($maker->prepared_values);
             // Fetch the records so we can display them in our template.
             $stm_result = $stmt->fetch($maker->instance->fetchMode());
-            // echo 'passed-',self::$passed_table_name, $this->belongs_to_table,"  belongs-" ,$this->belongs_to_table;
-            $this->resetVariables();
+            $maker->instance->debargPrint($sql, $maker->prepared_values, null, true);
+            $this->activate_findby_pk = false;
+            // with one to append several results from the other tables down
+            $stm_result = $this->appendWithToResult($stm_result, $maker->instance, $this->table_name, $this->with_one_array, false);
+            $stm_result = $this->appendWithToResult($stm_result, $maker->instance, $this->table_name,$this->with_array, true);
+            $stm_result = $this->attachUpperLevelRecord($stm_result, $maker->instance, $this->table_name, $this->attach_array);
+            $stm_result = $this->appendWithThrough($stm_result, $maker->instance, $this->table_name);
+            $stm_result = $this->attachThroughRecord($stm_result, $maker->instance, $this->table_name);
             return $stm_result;
         }else{ 
             //providing the where clouse of childe table
-            $this->customWhere();
-            // 
-            $this->sql = "SELECT $this->select FROM $this->table_name $this->where";
+            $this->customWhere($this->id_for_one_record);
+            // count the number before limiting pagination 
+            $count_sql = null;
             
-            if($this->group_by){
+            if($this->sql_hasmany){
+                $_sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
+                $_sql_count = "SELECT * FROM $this->table_name $this->join_result_string $this->where";
+                // 
+                $this->sql = str_replace("SELECT $this->select FROM $this->table_name", $this->sql_hasmany, $_sql);
+                $count_sql = str_replace("SELECT * FROM $this->table_name",$this->sql_hasmany,$_sql_count);
+                
+                $this->sql_hasmany = null;
+            }elseif($this->sql_hasone){
+                $this->sql = str_replace('*',$this->select, "$this->sql_hasone $this->join_result_string $this->where")." LIMIT 1";
+                $this->sql_hasone = null;
+                
+            }elseif($this->sql_belongs_to){
+                $_sql = "SELECT $this->select FROM $this->belongs_to_table $this->join_result_string $this->where";
+                $belongs_to_id = $this->belongs_to_."_id";
+                $partial_where_query = "WHERE $belongs_to_id = ( SELECT $belongs_to_id FROM ".self::$passed_table_name." WHERE $belongs_to_id = $this->id_for_one_record LIMIT 1 )" ;
+                // 
+                $this->sql = str_replace("SELECT $this->select FROM $this->table_name", $this->sql_belongs_to, $_sql)."$partial_where_query LIMIT 1";
+                
+            }elseif($this->sql_has_many_through || $this->sql_blongs_to_many){
+                $this->sql = $this->sql_has_many_through;
+                // 
+                $this->sql_blongs_to_many = null;
+                $this->sql_has_many_through = null;
+            }else{
+                $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
+                //without
+                if($this->without && $this->sql_with_most){
+                    $ids = [];
+                    $response = self::sql($this->sql_with_most);
+                    foreach ($response as $each_res) {
+                        $each_res =  is_object($each_res)? get_object_vars($each_res):$each_res;
+                        $ids = [...$ids, $each_res['table_id']];
+                    }
+                    $csv_ids = join(',', $ids);
+                    $id_column = $this->table_name."_id";
+                    $_where = $this->where?str_replace("WHERE ", " AND ", $this->where):null;
+                    // 
+                    $sql = "SELECT * FROM $this->table_name WHERE $id_column NOT IN ($csv_ids) $_where"; 
+                    $this->sql = str_replace("*", $this->select, $sql);
+                }
+            }
+            //    
+            $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $this->sql));
+            // 
+            if($this->sql_hasone ){
+                $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $count_sql));
+            }
+            // **************************************************************************************
+            // with most
+            if($this->sql_with_most && !$this->without){
+                $limit = (self::$limit >0)?" LIMIT ".self::$limit:null;
+                // 
+                $sql = $this->sql_with_most.$limit;
+                $response = self::sql($sql);
+                // extract the table_id from the
+                if(count($response)){
+                    foreach ($response as $each_res) {
+                        $each_res =  is_object($each_res)? get_object_vars($each_res):$each_res;
+                        // 
+                        $main_table = $this->table_name."_id";
+                        $each_sql = $this->sql." WHERE $main_table = ".$each_res['table_id'];
+                        $one = self::sql($each_sql,null,false);
+                        $this->with_most_data = [...$this->with_most_data, $one];
+                    }
+                }
+            }
+            
+            // **************************************************************************************
+            if($this->group_by && $this->group_by){
                 $this->sql.= " GROUP BY $this->group_by ";
             }
             // 
@@ -592,15 +850,12 @@ class Model{
                 $this->sql = str_replace("SELECT * FROM $this->called_class", "SELECT * FROM $this->called_class $this->join_result_string", $this->sql);
             }
             // 
-            if($this->order_by){
+            if($this->order_by && $this->order_by){
                 $this->sql.= " $this->order_by ";
             }
-            // count the number before limiting pagination 
-            $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
-            $count_sql = "SELECT * FROM $this->table_name $this->join_result_string $this->where";
-            $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $count_sql));
             // 
-            $DRIVER = self::maker()->instance->env()["DRIVER"];
+            
+            $DRIVER = $maker->instance->env()["DRIVER"];
             if($this->activate_paginating){
                 self::$skip = (self::$page-1)*self::$per_page;
                 self::$limit = self::$per_page;
@@ -612,16 +867,16 @@ class Model{
                 }else{
                     $this->sql.= " LIMIT $skip, $limit";   
                 }
-            }elseif($this->activate_find && self::$limit){
+            }elseif($this->activate_find && self::$limit && !$this->sql_with_most){
                 if($DRIVER === "postgresql"){
                     $this->sql.= " LIMIT $self_skip OFFSET $self_limit";
                 }else{
                     $this->sql.= " LIMIT $self_skip, $self_limit";   
                 }
             }
-            //    
-            $instance = new Connection();
-            $conn = $instance->connect();
+            // 
+            $instance = $maker->instance;
+            $conn = $maker->instance->connect();
             $stmt = $conn->prepare($this->sql);
             $stmt->execute($this->prepared_values);
             // Fetch the records so we can display them in our template.
@@ -649,16 +904,34 @@ class Model{
                 //
                 $results = $instance->isObjMode()? (object) $results:$results;
             }else{
-                $results = $this->activate_hasone?
-                            $stmt->fetch($instance->fetchMode()):
-                            $stmt->fetchAll($instance->fetchMode());
+                    if(!$this->sql_with_most || $this->without){
+                        $results = ($this->activate_hasone || $this->sql_belongs_to)?
+                        $stmt->fetch($instance->fetchMode()):
+                        $stmt->fetchAll($instance->fetchMode());
+                    }
                 }
             }
-        $instance->debargPrint($this->sql, $this->prepared_values, null, true);
-        $instance = null;
-        // 
+            
+            $this->sql_with_most??$instance->debargPrint($this->sql, $this->prepared_values, null, true);
+        if($this->activate_paginating){
+            $results =  $instance->isObjMode()? get_object_vars($results):$results;
+            $results['data'] = $this->appendWithToResult($results['data'] , $maker->instance, $this->table_name, $this->with_one_array, false);
+            $results['data']  = $this->appendWithToResult($results['data'] , $maker->instance, $this->table_name, $this->with_array, true);
+            $results['data']  = $this->appendWithThrough($results['data'] , $maker->instance, $this->table_name);
+            $results['data']  = $this->attachThroughRecord($results['data'] , $maker->instance, $this->table_name);
+            $results['data']  = $this->attachUpperLevelRecord($results['data'] , $maker->instance, $this->table_name);
+            $results = $instance->isObjMode()? (object)$results:$results;
+        }else{
+            $results = count($this->with_most_data)?$this->with_most_data:$results;
+            $results = $this->appendWithToResult($results, $maker->instance, $this->table_name, $this->with_one_array, false);
+            $results = $this->appendWithToResult($results, $maker->instance, $this->table_name, $this->with_array, true);
+            $results = $this->appendWithThrough($results, $maker->instance, $this->table_name);
+            $results = $this->attachThroughRecord($results, $maker->instance, $this->table_name);
+            $results = $this->attachUpperLevelRecord($results, $maker->instance, $this->table_name);
+        }
+        //
         $this->resetVariables();
-        
+        $instance = null;
         return !$results?[]:$results;
     }  
     private function countTotal(string $sql):int{
@@ -669,106 +942,68 @@ class Model{
         $result = $stmt->fetch(PDO::FETCH_OBJ);
         return $result->total_count;
     }
-    
     // resetting somevariables
     private function resetVariables(){
         $this->activate_hasone = false;
         $this->belongs_to_table = false;
+        $this->sql_belongs_to = null;
+        $this->sql = null;
+        $this->has_many_through_table = null;
+        $this->with_one_array = [];
+        $this->with_array = [];
     }
 
     //relationship has manay function
     public function hasMany(string $ref_table){
-        // $maker = self::maker($where_selector);
-        // $where = str_replace("WHERE", "", $this->where?:$maker->where);
-        // $use_where = $where ? " AND $where ":null;
-        // $prepared_values = $maker->prepared_values ?:[];
-        // // 
-        // $parent_col = $maker->builder->idColName($maker->table_name);
-        // $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? $use_where";
-        // // 
-        // $stmt = $maker->instance->connect()->prepare($this->sql);
-        // $stmt->execute([$this->id_for_one_record, ...$prepared_values]);
-        // // 
-        // $results = $stmt->fetchAll($maker->instance->fetchMode());
-        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        // return $results??[];
-        // *****************************************************
-        // $child_table = new Model($ref_table);
-        // print_r(get_called_class());
-        // return $child_table->___f($ref_table);
-        return $this->___f($ref_table );
+        $this->sql_hasmany = "SELECT * FROM $ref_table";
+        return $this->___f();
     }
     
     //relationship has one function
     public function hasOne(string $ref_table){
-        $maker = self::maker();
-        $parent_col = $maker->builder->idColName($maker->table_name);
-        // 
-        $this->sql = "SELECT * FROM $ref_table WHERE $parent_col = ? LIMIT 1";
-        $stmt = $maker->instance->connect()->prepare($this->sql);
-        $stmt->execute([$this->id_for_one_record]);
-        $results = $stmt->fetch($maker->instance->fetchMode());
-        // 
-        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        return $results??[];
-
-        // ***************************
-        // ***************************
+        $this->sql_hasone = "SELECT * FROM $ref_table";
         $this->activate_hasone = true;
-        return $this->___f($ref_table);
+        return $this->___f();
     }
     //relationship belongs to function
     public function belongsToOne(string $ref_table){
-        // $maker = self::maker();
-        // $ref_col = $maker->builder->idColName($ref_table);
-        // $this->sql = "SELECT * FROM $ref_table WHERE $ref_col = ? LIMIT 1";
-        // // 
-        // $stmt = $maker->connect()->prepare($this->sql);
-        // $stmt->execute([$this->id_for_one_record]);
-        // // 
-        // $results = $stmt->fetch($maker->instance->fetchMode());
-        // $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        // return $results??[];
-        $this->belongs_to_table = strtolower($ref_table);
+        $this->sql_belongs_to = "SELECT * FROM $ref_table";
+        $this->belongs_to_ = strtolower($ref_table);
         return $this;
     }
     //relationship for many to many function
-    public function hasManyMany(string $ref_table, array $where_selector=[]):array{
-        $maker = self::maker($where_selector);
-        $where = str_replace("WHERE", "", $maker->where);
-        $use_where = $where ? " AND $where ":null;
-        $prepared_values = $maker->prepared_values ?:[];
-        // 
-        $new_table_name = $maker->table_name.="_";
-        $pivot_table = $new_table_name.=$ref_table;
-        $parent_col = $maker->builder->idColName($maker->table_name);
-        $ref_col = $maker->builder->idColName($ref_table);
-        // 
-        $this->sql = "SELECT * FROM $ref_table WHERE $ref_col IN 
-                     (SELECT $ref_col FROM $pivot_table WHERE $parent_col = $this->id_for_one_record) $use_where";
-        $stmt = $maker->instance->connect()->prepare($this->sql);
-        $stmt->execute([$this->id_for_one_record , ...$prepared_values]);
-        $results = $stmt->fetchAll($maker->instance->fetchMode());
-        // 
-        $maker->instance->debargPrint($this->sql, [$this->id_for_one_record], null, true);
-        return $results??[];
+    public function hasManyThrough(string $ref_table){
+        $maker = self::maker();
+        $ref_table =  $maker->instance->renameTable($ref_table);
+        $this->sql_has_many_through = "SELECT * FROM $ref_table";
+        $this->has_many_through_table = strtolower($ref_table);
+        return $this;
+    }
+    //relationship for many to many function
+    public function belongsToMany(string $ref_table){
+        $this->sql_blongs_to_many = "SELECT * FROM $ref_table";
+        $this->has_many_through_table = strtolower($ref_table);
+        return $this;
     }
 
     ///***************************************************************** */
     ///***************************************************************** */
-    ///***************************************************************** */
-    ///***************************************************************** */
-    public static function findByPk($where){
-        $inst = new Model(strtolower(get_called_class()));
+    private static function findByPk($where){
+        $inst = new Model(get_called_class());
         return $inst->__ByPk($where);
     }
-    public static function find(){
-        $inst = new Model(strtolower(get_called_class()));
-        return $inst->___f();
+    public static function find(int|string $id = null){
+        if($id){
+           return self::findBypk($id );
+        }else{
+            $inst = new Model(get_called_class());
+            return $inst->___f();
+        }
     }
     //table
     public static function table($tablename){
-        $inst = new Model(strtolower($tablename));
-            return $inst->___f();
+        $inst = new Model($tablename);
+        $response = $inst->___f();
+        return $response;
     }
  }

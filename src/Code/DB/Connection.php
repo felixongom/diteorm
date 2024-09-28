@@ -6,9 +6,8 @@ use PDOException;
 class Connection
 {
     private $env = [];
-    public function __construct()
-    {
-        $this->env = parse_ini_file('.env');
+    public function __construct($setup = null){
+        $this->env = $setup?:parse_ini_file('.env');
     }
 
     //connection
@@ -114,13 +113,6 @@ class Connection
                 return false;
             }
         }
-
-        // if($this->env()['DRIVER']==='sqlite') return $result;
-        // if ($result['count'] > 0) {
-        //     return true;
-        // } else {
-        //     return false;
-        // }
     }
     private function col_exist($rows, $colmn_name){
         $is_found = false;
@@ -132,9 +124,22 @@ class Connection
         }
         return $is_found;
     }
+    //renaming table witg underscor
+    public function renameTable(string $table_name){
+        $new_table_name = '';
+        for($i = 0; $i< strlen($table_name); $i++){
+            if($i!= 0 && $i<strlen($table_name) && preg_match('/[A-Z]/', $table_name[$i])){
+                $new_table_name .= "_".$table_name[$i];
+            }else{
+                $new_table_name .= $table_name[$i];
+            }
+        }
+        return strtolower($new_table_name);
+    }
+
     //debarg print
     public  function debargPrint(string $SQL=null , array|string $PREPARED_VALUE=null, $messege=null, bool $many = false){
-        if(array_key_exists('LOGGER', $this->env) && $this->env['LOGGER']==1){
+        if(array_key_exists('IS_DEVMODE', $this->env) && $this->env['IS_DEVMODE']==1){
             $val =  json_encode($PREPARED_VALUE);
             $check_many = $many ?$val:"[$val]";
             $sql = $SQL===null?'':"<div style='margin:0;'>sql = {$this->colorfullSql($SQL,'SQL_COLOR','#cc00cc')}<div> <br>";
@@ -146,19 +151,33 @@ class Connection
             // 
             $nonsql_color = $this->setColor('NONSQL_COLOR', '#cccccc');
             $color_bg = $this->setColor('SQL_BG', '#011222');
-            // 
+            //
+            $new_sql = '';
+            
+            if(is_array($PREPARED_VALUE)){
+                for($i = 0; $i < strlen($sql); $i++){
+                    if($sql[$i] =='?'){
+                        $new_sql.=$PREPARED_VALUE[0];
+                        $PREPARED_VALUE = array_slice($PREPARED_VALUE,1);
+                    }else{
+                        $new_sql.=$sql[$i];
+                    }
+                }
+            }
+            $new_sql = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$sql:$new_sql;
+            $value = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$value:null;
             echo("
-                <div style='background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
-                    $mess $sql $value $hr
+                <div style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
+                    $mess $new_sql $value $hr
                 </div>");
         }
     }
     //
     private function colorfullSql($sql, $key, $default_color){
-        $key_words = [' DATABASE  ',' DROP ',' ALTER ', ' COLUMN ',' PIMARY ',' FOREIGN ', ' REFERENCES  ',' KEY ',' CONSTRAINT ',' ADD ',' CHECK ',' ADD ',' DEFAULT ',
-        'SELECT ', ' FROM ',' WHERE ', ' JOIN ',' LEFT JOIN ',' RIGHT JOIN ',' INNER JOIN ', ' FULL OUTER JOIN ', ' ON ', ' LIMIT ', ' OFFSET ',
-        ' CREATE ',' TABLE ',' LIKE ',' AS ',' TOP ',' DELETE ',' UPDATE ',' SET ',' IS ',' NOT ',' UNIQUE ',' NULL ',' INSERT ',' INTO ',' VALUES ',' GROUP ',' ORDER ',' HAVING '
-        ,' ORDER ', ' BY ',' DSC ',' DESC ',' AND ',' OR ',' NOT ',' COUNT ',' DISTINCT ',' IN ',' BETWEEN ',' EXIST ',' ALL ',' ANY ',' COALESCE '];
+        $key_words = [' DATABASE  ',' DROP ',' ALTER ', ' COLUMN ',' PRIMARY ',' FOREIGN ', 'REFERENCES',' KEY ',' CONSTRAINT ',' ADD ',' CHECK ',' ADD ',' DEFAULT ',
+        'SELECT ', ' FROM ',' WHERE ', ' JOIN ',' LEFT JOIN ',' RIGHT JOIN ',' INNER JOIN ', ' FULL OUTER JOIN ', ' ON ', ' LIMIT ', ' OFFSET ','CREATE ','IF',
+        ' CREATE ',' TABLE ',' LIKE ',' AS ',' TOP ',' DELETE ',' UPDATE ',' SET ',' IS ',' NOT ',' UNIQUE ','NULL',' INSERT ',' INTO ',' VALUES ',' GROUP ',' ORDER ',' HAVING '
+        ,' ORDER ', ' BY ',' ASC ',' DESC ',' AND ',' OR ',' NOT ',' COUNT ',' DISTINCT ',' IN ',' BETWEEN ',' EXISTS ',' ALL ',' ANY ',' COALESCE '];
         // 
         $sql_color = $this->setColor($key, $default_color);
         

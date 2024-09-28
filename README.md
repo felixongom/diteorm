@@ -1,24 +1,10 @@
-## DiteORM.
+## Dite-ORM.
 
-This is PHP ORM for interacting with relational database like Mysql, Sqlite, Posgre, Oracle etc. Currently, it supports only Sqlite, Mysql, Sqlserver and Postgresql databases.
+This is PHP ORM for interacting with relational databases. It supports only Sqlite, Mysql, Sqlserver and Postgresql databases.
 It allows us to keep oursevles within only PHP code instead of switching between sql and PHP code.
-
-**DiteORM** uses functions and classes to generate the right sql which is needed. This means sometimes you have to adjust the setting in the php.ini to fit the database you are using.
-
-<!-- install -->
 
 ## Installation.
 
-This can be done using one of this two ways;
-
-**1 -** Download this [github repository](https://github.com/felixongom/DiteORM) and extract it into the root of your project.
-```bash
-cd DiteORM
-composer dump-autoload -o
-cd ..
-```
-
-**2 -** Using composer by running **composer require  dite-orm** at the root of you project.
 ```bash
 composer require ongom/dite-orm
 ```
@@ -34,7 +20,7 @@ DRIVER = sqlite
 DATABASE_NAME = schooldb
 RUN_SCHEMA = 1
 ```
-- **DRIVER** is the type of database management system you are using. The value is sqlite.
+- **DRIVER** is the database management system you are using. The value is sqlite.
 - **DATABASE_NAME** is the name of the database you are using. The value is the name of your database like 'school_database'.
 
 #### Setup for mysql, sqlserver, postgre.
@@ -50,32 +36,29 @@ RUN_SCHEMA = 1
 ```
 
 - **DRIVER** is the type of database management system you are using. List of posible values are;
-  - sqlite
   - mysql
   - sqlsever 
   - postgresql or pgsql
-- **DATABASE_NAME** is the name of the database you are using. The value is the name of your database like 'school_database'.
 - **SERVER_NAME** is the server name or port for example 'localhost' of 3605.
-- **USER_NAME** is the user name for example 'root'.
+- **USER_NAME** is the username e.g. example 'root'.
 
 - **DATABASE_PASSWORD** is the password of the database example '23R42'.
 
 **_Other configarations that can be added to .env file._**
 
-```bush
-LOGGER = 1
+```php
+IS_DEVMODE = 1
 FETCH_MODE = std_array
 RUN_SCHEMA = 1
 SQL_COLOR = green
 ```
 
-- **LOGGER** is for debuging purpose.
+- **IS_DEVMODE** is for debuging purpose.
   - 1 means you want to print queries and messeges on the screen, this should be only used in development.
   - 0 or any other number means no printing queries or messeges on the screen, it is used for production.
 - **RUN_SCHEMA.** When you try to create the table using the Schema, the table will not be created, to solve this add RUN_SCHEMA = 1 to the .env file. After creating the tables you can turn the value 0 (RUN_SCHEMA = 0) or remove it completely to avoid rerunning the queries for creating the table again. When you add any new tables, you will have to turn it back to 1 and again run the code.
 - **FETCH_MODE** defines how the records are going to be fetched from the database.
   - std_arrays means that the records will be fetched as a php standard array whose values can be access as shown bellow.
-- **SQL_COLOR** definds the color of sql keywords when printing to the screen.
 ```php
 $user = ["name"=>"tom", "age"=>36];
 $user["name"]; //tom
@@ -87,33 +70,64 @@ $user = stdClass Object ([name] => tom [email] => tom@gmail.com)
 $user->name; //tom
 $user->age; //36
 ```
-  - If you don't spacify this in the .env file, it will default to **std_obj**.
+  - **SQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default purple color.
+  - **NONSQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default whitish color.
+  - **SQL_BG** definds the background color of the sql peing printed on screen in dev mode. The default is black.
+  ***NOTE:*** All colour codes are defind in the .env file as :fff but not #fff (Use he colon but not #)
 
-## Creating tables.
-Before any step you first need to autoload the outoload.php from vendor folder.
+**Alternative way of creating connection to the database**
+Incase you don't want to add all the connetion details directly to the .env file, use the static method ,**setup()** which is on both Model and Schema from dite. This method take in an array of configuration setup
 
 ```php
-require_once "path/to/vendor/autoload.php";
-```
-Creating tables can be done in two ways.
+  Model::setup([
+'DRIVER' => 'sqlite',
+'DATABASE_NAME' => 'schooldb',
+'RUN_SCHEMA' => 1,
+'APP_PASSWORD' => 'rqae hrue bili alru',
+'LOGGER' => 1,
+'SQL_COLOR' => ':3f2',
+'NONSQL_COLOR' = ':f3fb'
+'SQL_BG' = 'red'
+'SEPARATOR' = 'white'
+])
 
-- Using existing database / other softwares (mysql workbench, navycat, DB browser, etc. ) to create. 
+// And also
+  Schema::setup([
+'DRIVER' => 'sqlite',
+'DATABASE_NAME' => 'schooldb',
+'RUN_SCHEMA' => 1,
+'APP_PASSWORD' => 'rqae hrue bili alru',
+'IS_DEVMODE' => 1,
+'SQL_COLOR' => ':3f2',
+'NONSQL_COLOR' = ':f3fb'
+'SQL_BG' = 'red'
+'SEPARATOR' = 'white'
+])
+```
+
+## Creating tables.
+
 - Using Dite Schema.
+- Using existing database / Using other softwares (mysql workbench, navycat, DB browser, etc. ) to create. 
 
 **1. Using existing database or other softwares to create the database.**
 
 When using other software like myql workbench or PHPmyadmin, all you need to care about is the primary key field.
 Primary key field name is got from the name of the table written in lowercase. ie
 - **Users** pk feild will be **users_id**
-- **Blog_Post** pk feild will be **blog_post_id**
+- **BlogPost** pk feild will be **blog_post_id**
+- **Blog_post** pk feild will be **blog_post_id**
 - **Prices** pk feild will be **Prices_id**
 
+**Note::** Uppercase letter in the middle of the name result into underscore before the uppercase letter.
+
+#### Creating connetion to db.
+Add connection to the database direct to the .env or use the setup method to add connection.
 Then the model classes(representing each table) are defined like below.
 
 
 ```php
 use Dite\Model\Model;
-
 require_once "path/to/vendor/autoload.php";
 
 //users
@@ -122,7 +136,8 @@ class Users extends Model{}
 class Posts extends Model{}
 // Status
 class Status extends Model{}
-// Status
+
+//OR 
 class DB extends Model{}
 
 ```
@@ -135,7 +150,6 @@ Add the following code below the require statement.
 use Dite\Schema\Schema;
 use Dite\Model\Model;
 use Dite\Table\Table;
-
 
 require_once "path/to/vendor/autoload.php";
 //users
@@ -183,10 +197,10 @@ class Users extends Model{
 }
 
 //posts
-class Posts extends Model{
+class BlogPosts extends Model{
 
   public function __construct() {
-    Schema::create('Posts', function(Table $table){
+    Schema::create('BlogPosts', function(Table $table){
       $table->id();
       $table->string('title')->notnull();
       $table->string('body')->notnull();
@@ -211,7 +225,7 @@ class Status extends Model{
 //Instantiating the three classes
 $status = new Status()
 $users = new Users()
-$posts = new Posts()
+$posts = new BlogPosts()
 ```
 
 **_Note:_**
@@ -225,7 +239,7 @@ $users = new Users()
 $posts = new Posts()
 $status = new Status()
 ```
-Run the code by openinng your file in the browser. This will create the table in the database.
+Run the code e.g. by opening your file in the browser. This will create the table in the database.
 
 - You can also use Users::class or 'Users' for table name called users and so for other tables.
 
@@ -234,7 +248,7 @@ After the tables has bean created, You can open .env and change RUN_SCHEMA = 0 o
 #### 1. Creating an intermidate table.
 
 The intemediate table has a convention of creating it inorder for **Dite** to understand. You have to concatenate the two table names.
-For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** and the primary key feild will be **teachers_courses_id** . The intermediate table must be created like below.
+For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** or **TeachersCourses::class** and the primary key feild will be **teachers_courses_id** . The intermediate table must be created like below.
 ```php
 //Teachers table
 class Teachers extends Model{
@@ -261,7 +275,7 @@ class Courses extends Model{
 class Teachers_Courses extends Model{
 
   public function __construct() {
-    Schema::create(Teachers_Courses::class, function(Table $table){
+    Schema::create(TeachersCourses::class, function(Table $table){
       $table->id();
       $table->foriegnKey('courses_id');
       $table->foriegnKey('teachers_id');
@@ -275,6 +289,11 @@ class Teachers_Courses extends Model{
 You can not chain any method on to id().
 ```php
 $table->id();
+```
+
+- **primaryKey()** - Defines primay key feild.
+```php
+$table->primaryKey();
 ```
 - **string()** -Sql varchar feild. It takes in two parameter, one mandatory string parameter(field name like comments), second optional integers parameter which defaults to 255 (max length of the charactors accepted).
   ```php
@@ -345,7 +364,7 @@ $table->id();
 
 ##### Field constrains
 
-- **notnull()** -Sql NOT NULL constrain. You can not do this on id() method..
+- **notnull()** - Sql NOT NULL constrain. You can not do this on id() method..
   ```php
   $table->foreignKey('user_id')->notnull();
   $table->string('user_name')->notnull();
@@ -366,48 +385,48 @@ $table->id();
   $table->foreignKey('post_id')->cascades();
   $table->foreignKey('user_id')->unique()->notnull()->cascade();
   ```
-- **restrict()** -It sets ON DELETE and ON UPDATE constrian to RESTRICT.
+- **restrict()** - It sets ON DELETE and ON UPDATE constrian to RESTRICT.
   ```php
   $table->foreignKey('post_id')->restrict();
   ```
-- **setnull()** -It sets ON DELETE and ON UPDATE constrian to SET NULL.
+- **setnull()** - It sets ON DELETE and ON UPDATE constrian to SET NULL.
   ```php
   $table->foreignKey('post_id')->setnull();
   ```
-- **noaction()** -It sets ON DELETE and ON UPDATE constrian to NO ACTION.
+- **noaction()** - It sets ON DELETE and ON UPDATE constrian to NO ACTION.
   ```php
     $table->foreignKey('post_id')->noaction();
   ```
   You can also set this costrain one by one as shown below
-- **cascadeDelete()** -It sets ON DELETE CASCADE.
+- **cascadeDelete()** - It sets ON DELETE CASCADE.
   ```php
   $table->foreignKey('post_id')->cascadeDelete();
   ```
-- **cascadeUpdate()** -It sets ON UPDATE CASCADE.
+- **cascadeUpdate()** - It sets ON UPDATE CASCADE.
   ```php
   $table->foreignKey('post_id')->cascadeUpdate();
   ```
-- **restrictDelete()** -It sets ON DELETE RESTRICT.
+- **restrictDelete()** - It sets ON DELETE RESTRICT.
   ```php
   $table->foreignKey('post_id')->restrictDelete();
   ```
-- **restrictUpdate()** -It sets ON UPDATE RESTRICT.
+- **restrictUpdate()** - It sets ON UPDATE RESTRICT.
   ```php
   $table->foreignKey('post_id')->restrictUpdate();
   ```
-- **setnullDelete()** -It sets ON DELETE SET NULL.
+- **setnullDelete()** - It sets ON DELETE SET NULL.
   ```php
   $table->foreignKey('post_id')->setnullDelete();
   ```
-- **setnullUpdate()** -It sets ON UPDATE SET NULL.
+- **setnullUpdate()** - It sets ON UPDATE SET NULL.
   ```php
   $table->foreignKey('post_id')->setnullUpdate();
   ```
-- **noactionDelete()** -It sets ON DELETE NOACTION.
+- **noactionDelete()** - It sets ON DELETE NOACTION.
   ```php
   $table->foreignKey('post_id')->noactionDelete();
   ```
-- **noactionUpdate()** -It sets ON UPDATE NOACTION.
+- **noactionUpdate()** - It sets ON UPDATE NOACTION.
   ```php
     $table->foreignKey('post_id')->noactionUpdate();
   ```
@@ -448,15 +467,12 @@ The static method update() and updateMany() are used, they takes in two paramter
 //updating the user with id 1
 $user = User::update(1, ["user_name"=>"tom", "age"=>32]);
 
-//updating the user where user_name = tom
-$user = User::updateMany(["user_name"=>"tom"], ["user_name"=>"john", "age"=>32]);
+//updating the user where age > 10
+$user = User::update(["age"=>[":gt"=>10]], ["user_name"=>"john", "age"=>32]);
 
-//updating the user where user_name = tom and age = 32
-$user = User::updateMany(["user_name"=>"tom", "age"=>32], ["user_name"=>"andrew", "age"=>15]);
 ```
 
-The update method returns the new updated record.
-The updateMany method returns void.
+The update method returns the new updated record ony if you have passed the id.
 
 ### Deleting record.
 
@@ -465,18 +481,12 @@ Static method delete will delete a record by it's id.
 ```php
 //deleting the user where user_id = 1
 $user = User::delete(1);
-```
 
-#### Deleting many records.
-
-Static method deleteMany will delete all the record that match the where clouse passed as paramete.
-
-```php
 //deleting the user where user_name = tom
-$user = User::deleteMany(["user_name"=>"tom"]);
+$user = User::delete(["user_name"=>"tom"]);
 
-//deleting the user where user_name = tom and age = 30
-$user = User::deleteMany(["user_name"=>"tom", "age" => 30]);
+//deleting the user where IN (1,2)
+$user = User::delete([1,2]);
 ```
 
 #### NB:
@@ -485,32 +495,32 @@ $user = User::deleteMany(["user_name"=>"tom", "age" => 30]);
 
 #### Counting the number of records that matcht the query.
 
-Static method countRecords() is used for Counting the number of records that match the query.
+Static method countRows() is used for Counting the number of records that match the query.
 
 ```php
-//counting number the users where user_name = tom
-$user = User::countRecords();
+//counting number the users all users
+$user = User::countRows();
 
 //updating the user where user_name = tom and age = 30
-$user = User::countRecords(["user_name"=>"tom", "age" => 30]);
+$user = User::countRows(["user_name"=>"tom", "age" => 30]);
 ```
 
 ### Reading records from the database.
 
 This can be done using many methods which are all discussed below.
-All static methods without chaining functionality that are used for reading records takes in atleast two optional parameters, the where clause array/int and the feilds you want back.
+All static methods that are used for reading records without chaining functionality takes in atleast two optional parameters, the where clause array / int and the feilds you want back.
 The fields you want back can be passed as comma separated string value of the columns you want back **OR** as an array of all the feilds you want back. As shown below
  ```php
 //get all the records from the table user
-$user = User::all([], 'name, email');
+$user = User::all(null, 'name, email');
 
-////get all the records from the  user table where age >  30
+//get all the records from the  user table where age >  30
 $user = User::all(["age"=>[":gt"=>30]], ['name', 'email']);
 ```
 
 - #### all().
 
-  This is a static method that gets all the records that matches the query.
+This is a static method that gets all the records that matches the query.
 
 ```php
 //get all the records from the table user
@@ -551,11 +561,13 @@ $user = User::last(["age"=>[":gt"=>30]]);
 ```php
 //get the records from the table user where user_id = 2
 $user = User::findById(2);
-```
 
+//get the records from the table user where user_id IN (1,2,3)
+$user = User::findById([1,2,3]);
+```
 - #### findOne().
 
-  This is a method that gets records that matches the query.
+This is a method that gets records that matches the query.
 
 ```php
 //get the one and first record from the table user where user_id > 10
@@ -564,7 +576,7 @@ $user = User::findOne(["user_id"=>[":gt"=>10]]);
 
 - #### exist().
 
-  This is a method that checks if the record exists. It returns a true or false
+This is a method that checks if the record exists. It returns a true or false.
 
 ```php
 //checks if any user record exist
@@ -592,12 +604,16 @@ $user = User::sql("SELECT * FROM users WHERE user_name = ? And age > ?", ['tom',
 ```
 ## join
 
-There are several ways of joining two tables.
+There are several ways of joining two tables. All join method takes in two parameter, table name and an optional join condition. Dite will try set its own join conditon as below if the condition is not pased.
+"first_table.first_table_id = second_table.first_table_id"
+```php
+$user = User::joins(Post::class, "user.user_id = post.user_id");
+```
 - #### joins() and innerJoins().
-  This two methods do the same thing , they will inner join the two the tables.
+This two methods do the same thing , they will inner join the two the tables.
 
 ```php
-$user = User::joins(Post::class,);
+$user = User::joins(Post::class);
 //OR
 $user = User::joins("Post");
 //select * from user join post on user.user_id = post.user_id
@@ -610,32 +626,16 @@ There are methods for other type of joins.
 
  **So far we have looked at only static methods without chaining, Let us look at other chaining functionality available.**
 
-These methods end with get() and where clause is either passed as parameter in array or integer form or chain where() method but not both
-
-**::findByPk().**
-
-For getting a single record by primary key, it works like the atatic method findById() record fro a table, it works like all()
-
-```php
-//select * from user where user_id = 10.
-$user = User::findByPk(10)->get()
-//select user_id, username from user where user_id = 10.
-$user = User::findByPk(10)->select('user_id, username')->get()
-```
-
 **find()**.
 
-For getting all the records from a table, it works like all()
+For getting array or one of the records from a table.
 
 ```php
 $users = User::find()->get();
 //select * from user
-$users = User::find()->get();
-//select * from user where name = tom and age = 10.
-$users = User::find()
-          ->where(["name"=>"tom", "age"=>10])
-          ->get();
-//select * from user where age = tom and age = 10.
+
+$users = User::find(5)->get();
+//select * from user where user_id = 5
 ```
 
 There are few more methods you can chain onto the method find() as described below.
@@ -652,9 +652,6 @@ $user =  User::find()->orderBy(['user_id'=> 'asc'])->get();
 
 $user =  User::find()->orderBy(['user_id'=> 'asc', 'name'=>'desc'])->get();
 //select * from user order by user_id desc age asc.
-
-$user =  User::find()->orderBy('age asc')->get();
-//select * from user where name = john orderby age asc.
 ```
 
 ##### groupBy()
@@ -663,13 +660,13 @@ This will group the result by the suplied feild. groupBy() takes in a string par
 
 ```php
 
-$user = User::find()->groupBy('name')->get()
+$user = User::find()->groupBy('name')->get();
 //select * from user group by name.
 
-$user =  User::find()->groupBy('group_id')->get()
+$user =  User::find()->groupBy('group_id')->get();
 //select * from user group by group_id.
 
-$user =  User::find()->groupBy('username')->get()
+$user =  User::find()->groupBy('username')->get();
 //select * from user group by username where name = john doe.
 ```
 
@@ -678,26 +675,15 @@ $user =  User::find()->groupBy('username')->get()
 This will select only the spacified feilds. The parameter is either string or arrays.
 
 ```php
-$users =  User::find()->select(['name', 'age'])->get()
+$users =  User::find()->select(['name', 'age'])->get();
 //select name, age from user.
 //OR
-$users = User::find()->select('name, age')->get()
+$users = User::find()->select('name AS staff_names, age')->get();
 //select name, age from user.
 
 $users = User::find()
-        ->select(['name as names_of_staffs', 'age',  "COUNT(name) * 2 as total"])
-        ->get()
-// 
-$users = User::find()
-        ->groupBy('age')
-        ->get()
-//SELECT name as names_of_staffs', 'age', "COUNT(name) as total from user group by age where name = john.
-$users = User::find()
-        ->where(['name'=>'john'])
-        ->select('name, age')
-        ->groupBy('name')
-        ->orderBy(['user_id'=> 'desc', 'age'=>'asc'])
-        ->get()
+        ->select(['name as names_of_staffs', 'age', "COUNT(name) * 2 as total"])
+        ->get();
 ```
 
 ##### limit().
@@ -705,7 +691,7 @@ $users = User::find()
 This is used to spacify the number of record you want to fetch. It defaults to 12
 
 ```php
-$users = User::find()->limit(5)->get()
+$users = User::find()->limit(5)->get();
 //select * from user limit 5.
 ```
 
@@ -714,37 +700,32 @@ $users = User::find()->limit(5)->get()
 Both of these do the same thing. They are used to spacify the number of records that will be skiped. It defaults to 0 
 
 ```php
-$users = User::find()->skip(10)->get()
+$users = User::find()->skip(10)->get();
 //OR
-$users = User::find()->offset(10)->get()
+$users = User::find()->offset(10)->get();
 ```
 
-A combination of skip and limit can be used for paginating your result
+A combination of skip and limit can be used for paginating your result.
 
 ```php
-$users = Post::find()
-            ->skip(5)
-            ->limit(10)
-            ->select('title, post')
-            ->get()
-//select title, post from user limit 5,10
+$users = Post::find()->skip(5)->limit(10)->get();
+//select * from user limit 5,10
 ```
 
-### pagination.
+### Pagination.
 
 Pagination helps to query only a slice of records from the database. It has two methods;
 
-- page() - Takes in the page you want
+- page() - Takes in the page you want.
 - perpage() - Takes number of records for each page.
-
 
 ```php
 $users = User::find()
-        ->page(3)
-        ->perpage(5)
-        ->where(['first_name'=>'tom','age'=>[':gt'=>18]])
-        ->get()
+        ->page(2)
+        ->perpage(10)
+        ->get();
 ```
+- **page() and perpage() methods will activate pagination**
 
 The above query will return something like below
 
@@ -764,13 +745,12 @@ The above query will return something like below
 ```
 
 ### Using Model class to query data.
-Pass the name of the table to the model constrctor if you want to query using the Model class
+Pass the name of the table to the model constrctor if you want to query using the Model class.
 ```php
   class DB extends Model{}
-  $Post = DB::table('Post')->get()
+  $Post = DB::table('Post')->get();
   // OR
-  $Posts = Model::table('Post')->get()
-  
+  $Posts = Model::table('Post')->get();
   // 
   $users = DB::table('user')->select('name')->get()
   // find
@@ -778,39 +758,124 @@ Pass the name of the table to the model constrctor if you want to query using th
           ->limit(10)
           ->offset(5)
           ->select('name')
-          ->get()
+          ->get();
 
   // paginating
   $users = Model::table('post')
           ->page(10)
           ->perpage(5)
           ->select('title')
-          ->get()
+          ->get();
 // OR
 $users = DB::table('post')
           ->page(10)
           ->perpage(5)
           ->select('title')
-          ->get()
+          ->get();
 ```
 You can chain any valid method like select, join, group, etc.
+### Also
+```php
+$user = DB::table('user')::all();
+$user = DB::table('user')::findById(4);
+```
+#### Other chaining method.
+There are other chaining methods.
+
+##### withAll()
+It takes in three parameters; table name , optional where clause and selected columns. 
+```php
+$user = User::find()
+        ->withAll(Post::class, ['status'=>'active'],'username, age')
+        ->get();
+// 
+$user = User::find(5)
+        ->withAll(Post::class, ['status'=>'active'],'username, age')
+        ->get();
+```
+It will add all the records that have user_id form the post table to the corresponding record in the result.
+
+##### withOne()
+It takes in three parameters; table name , optional where clause and selected column.
+```php
+$user = User::find()
+        ->withAll(Post::class, ['status'=>'active'],'title')
+        ->get();
+//returns users post where you can paginate, each having there post appended to 
+//
+$user = User::find(3)
+        ->withOne(Post::class, ['status'=>'active'],'title')
+        ->get();
+//returns on post by its id together with one of his post
+```
+
+##### attach()
+It takes in three parameters; table name , optional where clause and selected column.
+```php
+$user = Post::find()
+        ->withAll(User::class)
+        ->get();
+//returns posts together with the user wo posted it. 
+$user = Post::find()
+        ->withAll(User::class)
+        ->get();
+//returns a post together with the user wo posted it. 
+```
+##### withMost()
+It gets the records from first table whose id has appered the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+```php
+$user = User::find()
+        ->withMost(Post::class)
+        ->limit(5)
+        ->get();
+//returns users that has posted the most. 
+```
+##### withMost()
+It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+```php
+$user = User::find()
+        ->withLeast(Post::class)
+        ->limit(5)
+        ->get();
+//returns users that has least number of post. 
+```
+##### withMost()
+It gets the records from first table whose id has mot appered in the second table in a one to many and a many to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+```php
+$user = User::find()
+        ->withOut(Post::class)
+        ->limit(5)
+        ->get();
+//returns users that has no post. 
+```
 
 ### Joining tables.
 #### join().
 
 Earlier we looked at joins but we were able to join only two tables using the static methods, now lets join more than two tabes.
 This are the different types of joins which are avaiable;
-**join(), innerJoin, leftJoin(), rightJoin()**.
+
+- join() 
+- innerJoin()
+- leftJoin()
+- rightJoin()
+- letftOuterJoin()
+- rightOuterJoin()
+- leftOuterJoin()
+- rightJoin()
+- leftJoin()
 
 ```php
 $users = User::find()
         ->join('post')
-        ->join('comments')
-        ->get()
+        ->join('comments', 'user.user_id = comment.user_id')
+        ->get();
 ```
+
 Three tables will be involved in this join, user, post and comments.
-You can join over 20 differnt tables together using any of the above types of join
-and apply pagination, select, border by , etc like below
+You can join over 20 differnt tables together using any of the above types of join and apply pagination, select order by, etc like below.
+
+Remember all joins takes in one more optional parameter i.e. the the join condition.
 
 ```php
 $users = User::find()
@@ -821,27 +886,8 @@ $users = User::find()
         ->orderBy('user.name'=>'desc')
         ->select(['user.name', 'post.title', 'count(*) As total'])
         ->where(["first_name" = "mike"])
-        ->get()
+        ->get();
 ```
-
-- **find() and findBypk can not be chained together, you will get an error**
-- **page() and perpage() methods will activate pagination**
-
-### joinOn
-This will require you to pass the name of the toble you are joining and the condition on which you are joining
-``` php
-$users = User::find()
-        ->joinOn('post', 'user.user_id = post.user_id')
-        ->leftJoinOn('comment','post.post_is = comment.coment_id') //optional 
-        ->select('user.username, post.post')
-        ->where(['user.first_name'=>'tom','user.age'=>[':gt'=>18]]) //optional
-        ->get()
-```
-##### There are also other methods for joining like;
-- leftJoinOn()
-- rightJoinOn()
-- innerJoinOn()
-- joinOn()
 
 ## Where clause.
 
@@ -866,18 +912,16 @@ you can also chain the where() method on the following methods
 - ::hasOne()
 - ::hasManyThrough()
 
-**It can be passed in the following ways**
+**It can be passed in the following ways.**
 
 ##### 1. Passing an integer.
 
-When you pass an integer to methods like **findById()** or **findBypk()** or **delete()**, the integer is primary id of the of the record you will get back
+When you pass an integer to methods like **findById()** or **delete()**, the integer is primary id of the of the record you will get back.
 
 ```php
-   $result = User::findById(2)
-   //OR
-   $post = Post::findByPk(2)->get()
-   //OR
-   $post = Post::findByPk(2)->select('post, title, created_at AS time')->get()
+$result = User::findById(2);
+//OR
+$post = Post::find(2)->get();
 ```
 
 The above code will return a single record whose primary id is 2.
