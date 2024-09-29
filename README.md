@@ -2,8 +2,24 @@
 
 This is PHP ORM for interacting with relational databases. It supports only Sqlite, Mysql, Sqlserver and Postgresql databases.
 It allows us to keep oursevles within only PHP code instead of switching between sql and PHP code.
+### Features of dite-orm.
+Dite-orm is to close to SQL. It can easily help to ineract with the database quickly and you get everything you need in one line of code. 
+- Supports multiple DBMS.
+- Configuration settings can be added directly into the .env file or using the setup method, but not both.
+- Uses PDO in the background.
+- Shorthand for the crud.
+- Provision for pagination, limit, order by, selecting only few fields, where clause, etc.
+- Geting record or records with their related data eg. getting posts with thier comments, or posts with the people who posted them.
+- Getting data from one table basing on another table. Example getting products that has no orders in the order table, getting products that has been ordered the most and those that has been oredered least in the order in which they have been ordered. 
+- Relationship (one to many, one to one, many to many) both forward and backword relationship in just a single function.
+- Printing out the query that are running to produce the records given out.
+- Provision for writing raw SQL.
+- Schema for creating tables and their fields using the correct datatype customizeable to meet you needs.
+- Table name being queried matches the class name quering it. It can also alow for passing table name using DB::table().
+ 
+- And many more. 
 
-### sample usage
+### Sample usage
 ```php
 User::create(['user'=>'john doe']); //creating a user
 
@@ -93,6 +109,9 @@ $user->age; //36
   - **SQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default purple color.
   - **NONSQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default whitish color.
   - **SQL_BG** definds the background color of the sql peing printed on screen in dev mode. The default is black.
+  - **FULL_SQL** It can allow you to see the prepared sql and the value with which it will be executed.
+  FULL_SQL = 0 to turn it on or FULL_SQL = 1 to turn it off. If it is not added , it defaults to full sql being written.
+  
   ***NOTE:*** All colour codes are defind in the .env file as :fff but not #fff (Use he colon but not #)
 
 **Alternative way of creating connection to the database**
@@ -827,6 +846,13 @@ $user = User::find()
 $user = User::find(5)
         ->withAll(Post::class, ['status'=>'active'],'username, age')
         ->get();
+
+//You can chain it many time like
+$user = Product::find(5)
+        ->withAll(Order::class)
+        ->withAll(Status::class)
+        ->get();
+
 ```
 
 ##### - withOne()
@@ -841,6 +867,13 @@ $user = User::find(3)
         ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
 //returns on post by its id together with one of his post
+
+//you can chain it many time like
+$user = Product::find(5)
+        ->withOne(Order::class)
+        ->withOne(Status::class)
+        ->withOne(Owner::class)
+        ->get();
 ```
 
 ##### attach()
@@ -855,6 +888,13 @@ $user = Post::find()
         ->attach(User::class)
         ->get();
 //returns a post together with the user wo posted it. 
+
+
+//you can chain it many time like
+$user = User::find(5)
+        ->attach(Department::class)
+        ->withOne(City::class)
+        ->get();
 ```
 ##### withMost()
 It gets the records from first table whose id has appeared the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
@@ -863,13 +903,22 @@ $user = User::find()
         ->withMost(Post::class)
         ->limit(5)
         ->get();
-//returns 5 users that has posted the most. 
+//returns 5 users that has posted the most.
+//  
+$user = User::find()
+        ->withMost(Post::class)
+        ->withAll(Post::class)
+        ->attach(City::class)
+        ->limit(5)
+        ->get();
 ```
 ##### withLeast()
 It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::find()
         ->withLeast(Post::class)
+        ->withAll(Post::class)
+        ->attach(City::class)
         ->limit(5)
         ->get();
 //returns 5 users that has least number of post. 

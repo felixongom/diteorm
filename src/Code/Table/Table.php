@@ -24,7 +24,6 @@ class Table{
     }
   //Running the query
     public function migreate(){
-        $conn = new Connection();
         $this->_string = $this->BuildColumn->getBuild();
         $constriain = $this->BuildColumn->getBuildRef();
         // 
@@ -36,10 +35,9 @@ class Table{
         )");
         //connections
         try {
-            $conn->connect()->exec($this->SQL);
-            // 
+            $this->conn->connect()->exec($this->SQL);
             $messege = "Table $this->table_name created successfully\n<br>";
-            $conn->debargPrint($this->SQL, null, $messege);
+            $this->conn->debargPrint($this->SQL, null, $messege);
         } catch(PDOException $e){
             exit("Failed to connect to database!<br>\n $this->SQL <br> {$e->getMessage()}");
         }
@@ -81,6 +79,7 @@ class Table{
     }
     //enum
     public function enum(string $name, array $values=[]){
+        $pg_drever = $this->conn->env()['DRIVER']===trim('pgslq') || $this->conn->env()['DRIVER']===trim('postgresql');
         $result = '';
         foreach ($values as $key => $value) {
             $comma = ($key+1==count($values)?null:',');
@@ -89,6 +88,15 @@ class Table{
         $Text  = null;
         if($this->conn->env()['DRIVER']===trim('sqlite')){
             $Text = "_*_{$this->conn->renameTable($name)} TEXT CHECK($name IN ($result) ) ";
+        }elseif($pg_drever){
+            //create type
+            $type_name = $name.'_type';
+            $enum_sql = "CREATE TYPE $type_name AS ENUM($result)";
+            $this->conn->connect()->exec($enum_sql);
+            $messege = "Type $type_name created successfully\n<br>";
+            $this->conn->debargPrint($this->SQL, null, $messege);
+            // 
+            $Text  = "_*_{$this->conn->renameTable($name)} $type_name ";
         }else{
             $Text  = "_*_{$this->conn->renameTable($name)} ENUM($result) ";
         }
