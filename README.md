@@ -369,7 +369,7 @@ $table->primaryKey();
   //OR
   $table->bigInt('size', 6);
   ```
-- **enum()** - It takes in two mandatory parameter, one string parameter(field name like size), second optional array parameter(only values ccepted).Tis method does not work for postgre sql.
+- **enum()** - It takes in two mandatory parameter, one string parameter(field name like size), second array parameter(only values accepted).
   ```php
   $table->enum('size', ['small','medium', 'large']);
   ```
