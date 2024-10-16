@@ -28,10 +28,10 @@ class Model{
     private $attach_through_array = [];
     // 
     private $with_most_data = [];
-    private $with_least = false;
-    private $without = false;
+    private static $with_least = false;
+    private static $without = false;
     // 
-    private $sql_with_most = null;
+    private static $sql_with_most = null; 
     private $prepared_values = [];
     private $select = '*';
     private $table_name = null;
@@ -704,7 +704,7 @@ class Model{
             $table = $maker->instance->renameTable($one_array[0]);
             $table_id = $table."_id";
             $main_table_id = $main_table."_id";
-            // 
+            //
             $intermidiat_table = $is_with?
                                 $maker->instance->renameTable($main_table)."_".$table:
                                 $table."_".$maker->instance->renameTable($main_table);
@@ -718,30 +718,30 @@ class Model{
         return $result ;
     }
     // *************************************************************************************
-    public function withMost(string $table_name){
+    public static function withMost(string $table_name){
         $maker = self::maker();
         $table_name = $maker->instance->renameTable($table_name);
-        $first_table_id = $this->table_name."_id";
-        $order = $this->with_least?'ASC':'DESC';
-        $sql = "SELECT $this->table_name.$first_table_id AS table_id, COUNT($this->table_name.$first_table_id) AS total_count 
+        $first_table_id = $maker->table_name."_id";
+        $order = self::$with_least?'ASC':'DESC';
+        $sql = "SELECT $maker->table_name.$first_table_id AS table_id, COUNT($maker->table_name.$first_table_id) AS total_count 
                 FROM $table_name 
-                JOIN  $this->table_name 
-                ON $this->table_name.$first_table_id = $table_name.$first_table_id
+                JOIN  $maker->table_name 
+                ON $maker->table_name.$first_table_id = $table_name.$first_table_id
                 GROUP BY $table_name.$first_table_id
                 ORDER BY total_count $order";
         
-        $this->sql_with_most =  $sql;
-        return $this;
+        self::$sql_with_most =  $sql;
+        return self::find();
     }
     // 
-    public function withLeast(string $table_name){
-        $this->with_least = true;
-        return $this->withMost($table_name);
+    public static function withLeast(string $table_name){
+        self::$with_least = true; 
+        return self::withMost($table_name);
     }
     // 
-    public function withOut(string $table_name){
-        $this->without = true;
-        return $this->withMost($table_name);
+    public static function withOut(string $table_name){
+        self::$without = true;
+        return self::withMost($table_name);
     }
     // *************************************************************************************
 
@@ -800,9 +800,11 @@ class Model{
             }else{
                 $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
                 //without
-                if($this->without && $this->sql_with_most){
+                
+                if(self::$without && self::$sql_with_most){
+                    
                     $ids = [];
-                    $response = self::sql($this->sql_with_most);
+                    $response = self::sql(self::$sql_with_most);
                     foreach ($response as $each_res) {
                         $each_res =  is_object($each_res)? get_object_vars($each_res):$each_res;
                         $ids = [...$ids, $each_res['table_id']];
@@ -822,11 +824,11 @@ class Model{
                 $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $count_sql));
             }
             // **************************************************************************************
-            // with most
-            if($this->sql_with_most && !$this->without){
+            // with most and with least
+            if(self::$sql_with_most && !self::$without){
                 $limit = (self::$limit >0)?" LIMIT ".self::$limit:null;
                 // 
-                $sql = $this->sql_with_most.$limit;
+                $sql = self::$sql_with_most.$limit;
                 $response = self::sql($sql);
                 // extract the table_id from the
                 if(count($response)){
@@ -867,7 +869,7 @@ class Model{
                 }else{
                     $this->sql.= " LIMIT $skip, $limit";   
                 }
-            }elseif($this->activate_find && self::$limit && !$this->sql_with_most){
+            }elseif($this->activate_find && self::$limit && !self::$sql_with_most){
                 if($DRIVER === "postgresql"){
                     $this->sql.= " LIMIT $self_skip OFFSET $self_limit";
                 }else{
@@ -904,7 +906,7 @@ class Model{
                 //
                 $results = $instance->isObjMode()? (object) $results:$results;
             }else{
-                    if(!$this->sql_with_most || $this->without){
+                    if(!self::$sql_with_most || self::$without){
                         $results = ($this->activate_hasone || $this->sql_belongs_to)?
                         $stmt->fetch($instance->fetchMode()):
                         $stmt->fetchAll($instance->fetchMode());
@@ -912,7 +914,7 @@ class Model{
                 }
             }
             
-            $this->sql_with_most??$instance->debargPrint($this->sql, $this->prepared_values, null, true);
+            self::$sql_with_most??$instance->debargPrint($this->sql, $this->prepared_values, null, true);
         if($this->activate_paginating){
             $results =  $instance->isObjMode()? get_object_vars($results):$results;
             $results['data'] = $this->appendWithToResult($results['data'] , $maker->instance, $this->table_name, $this->with_one_array, false);

@@ -128,7 +128,7 @@ Incase you don't want to add all the connetion details directly to the .env file
   'NONSQL_COLOR' = ':f3fb',
   'SQL_BG' = 'red',
   'SEPARATOR' = 'white'
-])
+]);
 
 // And also
   Schema::setup([
@@ -141,7 +141,7 @@ Incase you don't want to add all the connetion details directly to the .env file
   'NONSQL_COLOR' = ':f3fb',
   'SQL_BG' = 'red',
   'SEPARATOR' = 'white'
-])
+]);
 ```
 
 ## Creating tables.
@@ -175,7 +175,6 @@ class DB extends Model{
       'DRIVER' => 'sqlite',
       'DATABASE_NAME' => 'schooldb',
       'RUN_SCHEMA' => 1,
-      'APP_PASSWORD' => 'rqae hrue bili alru',
       'LOGGER' => 1,
       'SQL_COLOR' => ':3f2',
     ]);
@@ -671,8 +670,11 @@ $user = User::joins("Post");
 
 There are methods for other type of joins.
 
-- **leftJoins()** for left joins.
-- **rightJoins()** for right joins.
+- **leftJoins()**
+- **rightJoins()** 
+- **innerJoins()** 
+- **rightOuterJoins()** 
+- **leftOuterJoins()** 
 
  **So far we have looked at only static methods without chaining, Let us look at other chaining functionality available.**
 
@@ -886,6 +888,7 @@ $user = Post::find()
 //returns posts together with the user wo posted it. 
 $user = Post::find()
         ->attach(User::class)
+        ->attach(Department::class)
         ->get();
 //returns a post together with the user wo posted it. 
 
@@ -899,14 +902,12 @@ $user = User::find(5)
 ##### withMost()
 It gets the records from first table whose id has appeared the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
-$user = User::find()
-        ->withMost(Post::class)
+$user = User::withMost(Post::class)
         ->limit(5)
         ->get();
 //returns 5 users that has posted the most.
 //  
-$user = User::find()
-        ->withMost(Post::class)
+$user = User::withMost(Post::class)
         ->withAll(Post::class)
         ->attach(City::class)
         ->limit(5)
@@ -915,8 +916,7 @@ $user = User::find()
 ##### withLeast()
 It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
-$user = User::find()
-        ->withLeast(Post::class)
+$user = User::withLeast(Post::class)
         ->withAll(Post::class)
         ->attach(City::class)
         ->limit(5)
@@ -926,23 +926,22 @@ $user = User::find()
 ##### withOut()
 It gets the records from first table whose id has not appeared in the second table in a one to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result. You can also limit, paginate, etc.
 ```php
-$user = User::find()
-        ->withOut(Post::class)
+$user = User::withOut(Post::class)
         ->get();
 //returns users that has no post. 
 ```
 ##### withThrough()
-It takes in three parameters; table name. It will add all the records that have user_id from the post table to the corresponding record in the result. This happens in a many to many relationship.
+It takes in three parameters; table name,where and select. It retrieves teaches withe the subjects they teach. This happens in a many to many relationship.
 ```php
 $user = Teacher::find()
-        ->withThrough(Course::class)
+        ->withThrough(Course::class,['status'=>1], 'coures_name, course_id')
         ->get();
 ```
 ##### attachThrough()
-It takes in three parameters; table name. It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
+It takes in three parameters;  table name,where and select. It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
 ```php
 $user = Course::find()
-        ->attachThrough(Teacher::class)
+        ->attachThrough(Teacher::class,['status'=>1], 'name, age')
         ->get();
 //returns users that has no post. 
 ```
@@ -960,8 +959,6 @@ These are the different types of joins which are avaiable;
 - letftOuterJoin()
 - rightOuterJoin()
 - leftOuterJoin()
-- rightJoin()
-- leftJoin()
 
 ```php
 $users = User::find()
