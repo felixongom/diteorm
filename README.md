@@ -110,7 +110,7 @@ $user->age; //36
   - **NONSQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default whitish color.
   - **SQL_BG** definds the background color of the sql peing printed on screen in dev mode. The default is black.
   - **FULL_SQL** It can allow you to see the prepared sql and the value with which it will be executed.
-  FULL_SQL = 0 to turn it on or FULL_SQL = 1 to turn it off. If it is not added , it defaults to full sql being written.
+  FULL_0 to turn it on or FULL_1 to turn it off. If it is not added , it defaults to full sql being written.
   
   ***NOTE:*** All colour codes are defind in the .env file as :fff but not #fff (Use he colon but not #)
 
@@ -837,7 +837,8 @@ $user = DB::table('user')::findById(4);
 There are other chaining methods.
 
 ##### - withAll()
-It takes in three parameters; table name , optional where clause and selected feilds. It will add all the results from the second table keeping the id of the record in the first table. E.g.
+It takes in three parameters; table name , optional where clause and selected feilds. 
+It will add all the results from the second table keeping the id of the record in the first table. E.g.
 It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
 
 ```php
@@ -858,42 +859,46 @@ $user = Product::find(5)
 ```
 
 ##### - withOne()
-It takes in three parameters; table name , optional where clause and selected feilds.It will add one result from the second table keeping the id of the record in the first table. E.g. It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
+It takes in three parameters; table name , optional where clause and selected feilds.
+It will add one result from the second table keeping the id of the record in the first table. E.g. It retrieve the user or users with one of thier posts. 
+Works in a one to one and one to many relationship.
 ```php
 $user = User::find()
         ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
-//returns users post where you can paginate, each having there post appended to 
+//Returns users post where you can paginate, each having there post appended to 
 
 $user = User::find(3)
         ->withOne(Post::class, ['status'=>'active'],'title')
         ->get();
-//returns on post by its id together with one of his post
+//Returns on post by its id together with one of his post
 
-//you can chain it many time like
+//You can chain it many time like
 $user = Product::find(5)
         ->withOne(Order::class)
         ->withOne(Status::class)
         ->withOne(Owner::class)
+        ->page(1)
         ->get();
 ```
 
 ##### - attach()
-It takes in three parameters; table name , optional where clause and selected feilds. It will add all the results from the second whose id is in the first table. E.g.
-It retrieve the post or post with with person who posted it. Works in a one to one relationship.
+It takes in three parameters; table name, optional where clause and selected feilds. 
+It will add all the results from the second whose id is in the first table. E.g.
+It retrieve the post or posts with person who posted it. Works in a one to one relationship.
 ```php
 $user = Post::find()
         ->attach(User::class)
         ->get();
-//returns posts together with the user wo posted it. 
+//Returns posts together with the user wo posted it. 
 $user = Post::find()
         ->attach(User::class)
         ->attach(Department::class)
         ->get();
-//returns a post together with the user wo posted it. 
+//Returns a post together with the user who posted it. 
 
 
-//you can chain it many time like
+//You can chain it many time like
 $user = User::find(5)
         ->attach(Department::class)
         ->withOne(City::class)
@@ -914,21 +919,22 @@ $user = User::withMost(Post::class)
         ->get();
 ```
 ##### - withLeast()
-It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
+It gets the records from first table whose id has appeared least in the second table in a one to many relationship. 
+It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::withLeast(Post::class)
         ->withAll(Post::class)
         ->attach(City::class)
         ->limit(5)
         ->get();
-//returns 5 users that has least number of post. 
+//Returns 5 users that has least number of post. 
 ```
 ##### - withOut()
 It gets the records from first table whose id has not appeared in the second table in a one to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result. You can also limit, paginate, etc.
 ```php
 $user = User::withOut(Post::class)
         ->get();
-//returns users that has no post. 
+//Returns users that has no post. 
 ```
 ##### withThrough()
 It takes in three parameters; table name,where and select. It retrieves teaches withe the subjects they teach. This happens in a many to many relationship.
@@ -943,7 +949,7 @@ It takes in three parameters;  table name,where and select. It will add all the 
 $user = Course::find()
         ->attachThrough(Teacher::class,['status'=>1], 'name, age')
         ->get();
-//returns users that has no post. 
+//Returns Courses together with the correspnding teachers teaching each. 
 ```
 
 ### Joining tables.
@@ -995,7 +1001,7 @@ The where clause is passed as a parameter in the following methods.
 - ::last()
 - ::delete()
 - ::deleteMany()
-- ::countRecords()
+- ::countRows()
 - ::exist()
 - ::find()
 
@@ -1023,15 +1029,15 @@ When you pass an associative array to methods like **findOne()** or **all()**, t
 
 ```php
    $result = User::all(["user_id"=>5]);
-   //sql = SELECT * FROM user WHERE user_id = 5
+   //SELECT * FROM user WHERE user_id = 5
    //OR
    $result = User::all(["user_id"=>5, "name"=>"tom"]);
-   //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
+   //SELECT * FROM user WHERE user_id = 5 AND name = tom
    //OR
    $result = Posts::find()
             ->where(["user_id"=>5, "name"=>"tom"])
             ->get();
-  //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
+  //SELECT * FROM user WHERE user_id = 5 AND name = tom
 ```
 
 ##### 3. Passing nested associative array.
@@ -1040,7 +1046,7 @@ Sometimes you want to apply operators like <, >, <=, >=, =, like, etc. this is d
 
 ```php
    $result = User::all(["user_id"=>['$lt'=>5]]);
-   //sql = SELECT * FROM user WHERE user_id < 5
+   //SELECT * FROM user WHERE user_id < 5
    //OR
    $result = User::all([
        "user_id"=>[':lt'=>5],
@@ -1052,7 +1058,7 @@ Sometimes you want to apply operators like <, >, <=, >=, =, like, etc. this is d
        "user_id"=>[':lt'=>5],
        "age"=>[':gt'=>30],
     ]);
-   //sql = SELECT * FROM users WHERE email = tom@gmail.com AND user_id < 5 AND age > 30
+   //SELECT * FROM users WHERE email = tom@gmail.com AND user_id < 5 AND age > 30
 ```
 
 Instead of using ':', you can use '$', for example, the output of this code is the same.
@@ -1061,7 +1067,7 @@ Instead of using ':', you can use '$', for example, the output of this code is t
    $result = User::all(["user_id"=>['$lt'=>5]]);
    $result = User::all(["user_id"=>[':lt'=>5]]);
    //Both will output
-   //sql = SELECT * FROM user WHERE user_id < 5
+   //SELECT * FROM user WHERE user_id < 5
 ```
 
 ##### 4. Passing associative array where key is $and or :and.
@@ -1076,7 +1082,7 @@ This will only write queries in which the where clause is separated by AND.
            'phone'=>3 333 333 333
           ]
         ]);
-   //sql = SELECT * FROM user WHERE user_id < 5 AND age >30 AND phone = 3 333 333 333
+   //SELECT * FROM user WHERE user_id < 5 AND age >30 AND phone = 3 333 333 333
 ```
 ##### 5. Passing associative array where key is $or or :or.
 
@@ -1090,7 +1096,7 @@ This will only write queries in which the where clause is separated by OR.
           'phone'=>3 333 333 333
         ]
       ]);
-   //sql = SELECT * FROM user WHERE user_id < 5 OR age > 30 OR phone = 3 333 333 333
+   //SELECT * FROM user WHERE user_id < 5 OR age > 30 OR phone = 3 333 333 333
    
    $result = User::all([
        ':or'=>[
@@ -1101,7 +1107,7 @@ This will only write queries in which the where clause is separated by OR.
           ]
         ]);
    /*
-   sql = SELECT * FROM user 
+   SELECT * FROM user 
     WHERE (name = tom AND email = tom@gmai.com) 
         OR user_id < 5 
         OR age > 30 
@@ -1122,7 +1128,7 @@ This will negate the entire :and.
            ]
         ]);
     /*
-   sql = SELECT * FROM user 
+   SELECT * FROM user 
     WHERE NOT (
     user_id < 5 
     AND age > 30 
@@ -1136,7 +1142,7 @@ This will negate the entire :and.
         ]
       ]);
     /*
-   sql = SELECT * FROM user 
+   SELECT * FROM user 
     WHERE NOT (name = tom AND user_id < 5 )
    */
 ```
@@ -1154,7 +1160,7 @@ This will negate the entire :nor.
           ]
         ]);
     /*
-   sql = SELECT * FROM user 
+   SELECT * FROM user 
     WHERE NOT (
         OR user_id < 5 
         OR age > 30 
@@ -1168,7 +1174,7 @@ This will negate the entire :nor.
         ]
       ]);
     /*
-   sql = SELECT * FROM user 
+   SELECT * FROM user 
     WHERE NOT (name = tom OR user_id < 5 )
    */
   ```
@@ -1176,7 +1182,7 @@ The same way, putting n just after $ or : in the operator will negate that part 
 ```php
      $result = Users::all(["name" => "tom","user_id"=>['$nlt'=>5]]);
     /*
-   sql = SELECT * FROM users
+   SELECT * FROM users
     WHERE name = tom AND NOT (user_id < 5 ))
    */
 ```
@@ -1184,12 +1190,12 @@ The same way, putting n just after $ or : in the operator will negate that part 
 If the same key is going to appear more than once, normally associative array will only pick up the key which is written last, to deal with this kind of behavior , you have to append a leading underscore (_) before the column name in the array key, this is demonstrated below.
 ```php
 $result = Users::all(["name" => "joyce","_name"=>"tom"])
-// sql = SELECT * FROM users WHERE name = tom AND name = tom ))
+// SELECT * FROM users WHERE name = tom AND name = tom ))
 $result = Users::all([':or'=>[
                     "name" => "tom",
                     "_name"=>"daniel", 
                     "__name"=>"loy"]]);
-// sql = SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
+// SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
 
 //Alternatively
 $result = Users::find()
@@ -1198,7 +1204,7 @@ $result = Users::find()
                     "_name"=>"daniel", 
                     "__name"=>"loy"]])
                     ->get();
-// sql = SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
+// SELECT * FROM users WHERE name = tom OR name = deniel OR name = loy))
 
 ```
 You will have to append many underscores if the column name is repeating many times in that same associative array.
