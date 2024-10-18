@@ -837,7 +837,7 @@ $user = DB::table('user')::findById(4);
 There are other chaining methods.
 
 ##### - withAll()
-It takes in three parameters; table name , optional where clause and selected feilds. 
+It takes in three parameters; table name , optional where clause and selected feilds. It will add all the results from the second table keeping the id of the record in the first table. E.g.
 It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
 
 ```php
@@ -858,7 +858,7 @@ $user = Product::find(5)
 ```
 
 ##### - withOne()
-It takes in three parameters; table name , optional where clause and selected feilds. It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
+It takes in three parameters; table name , optional where clause and selected feilds.It will add one result from the second table keeping the id of the record in the first table. E.g. It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
 ```php
 $user = User::find()
         ->withOne(Post::class, ['status'=>'active'],'title')
@@ -878,8 +878,8 @@ $user = Product::find(5)
         ->get();
 ```
 
-##### attach()
-It takes in three parameters; table name , optional where clause and selected feilds.
+##### - attach()
+It takes in three parameters; table name , optional where clause and selected feilds. It will add all the results from the second whose id is in the first table. E.g.
 It retrieve the post or post with with person who posted it. Works in a one to one relationship.
 ```php
 $user = Post::find()
@@ -899,7 +899,7 @@ $user = User::find(5)
         ->withOne(City::class)
         ->get();
 ```
-##### withMost()
+##### - withMost()
 It gets the records from first table whose id has appeared the most in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::withMost(Post::class)
@@ -913,7 +913,7 @@ $user = User::withMost(Post::class)
         ->limit(5)
         ->get();
 ```
-##### withLeast()
+##### - withLeast()
 It gets the records from first table whose id has appered least in the second table in a one to many relationship. It takes in one parameter; table name. Chain the limit() to limit tha number of result.
 ```php
 $user = User::withLeast(Post::class)
@@ -923,7 +923,7 @@ $user = User::withLeast(Post::class)
         ->get();
 //returns 5 users that has least number of post. 
 ```
-##### withOut()
+##### - withOut()
 It gets the records from first table whose id has not appeared in the second table in a one to many relationships. It takes in one parameter; table name. Chain the limit() to limit tha number of result. You can also limit, paginate, etc.
 ```php
 $user = User::withOut(Post::class)
@@ -937,7 +937,7 @@ $user = Teacher::find()
         ->withThrough(Course::class,['status'=>1], 'coures_name, course_id')
         ->get();
 ```
-##### attachThrough()
+##### - attachThrough()
 It takes in three parameters;  table name,where and select. It will add all the Teachers teaching a perticuler course. This happens in a many to many relationship.
 ```php
 $user = Course::find()
@@ -1031,7 +1031,7 @@ When you pass an associative array to methods like **findOne()** or **all()**, t
    $result = Posts::find()
             ->where(["user_id"=>5, "name"=>"tom"])
             ->get();
-   //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
+  //sql = SELECT * FROM user WHERE user_id = 5 AND name = tom
 ```
 
 ##### 3. Passing nested associative array.
