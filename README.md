@@ -651,9 +651,9 @@ $user = User::sql("SELECT * FROM users");
 $user = User::sql("SELECT * FROM users", []);
 $user = User::sql("SELECT * FROM users WHERE user_name = ? And age > ?", ['tom', 30]);
 ```
-## join
+## joins
 
-There are several ways of joining two tables. All join method takes in two parameter, table name and an optional join condition. Dite will try set its own join conditon as below if the condition is not pased.
+There are several ways of joining four tables. All joins method takes in three parameter, table name, an optional join condition, optional where clause and optional select. Dite will try set its own join conditon as below if the condition is not pased.
 "first_table.first_table_id = second_table.first_table_id"
 ```php
 $user = User::joins(Post::class, "user.user_id = post.user_id");
@@ -670,6 +670,7 @@ $user = User::joins("Post");
 
 There are methods for other type of joins.
 
+- **fullJoins()**
 - **leftJoins()**
 - **rightJoins()** 
 - **innerJoins()** 
@@ -958,6 +959,7 @@ $user = Course::find()
 Earlier we looked at joins but we were able to join only two tables using the static methods, now lets join more than two tabes.
 These are the different types of joins which are avaiable;
 
+- fullJoin() 
 - join() 
 - innerJoin()
 - leftJoin()

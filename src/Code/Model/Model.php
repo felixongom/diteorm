@@ -287,27 +287,31 @@ class Model{
     }
     
     //join
-    public static function joins(string $second_table, string $join_condition = null, array $where = [], array|string $select = '*'){
+    public static function fullJoins(string $second_table, string $join_condition = null, array $where = [], string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "FULL JOIN", $select, $where); 
+    }
+    //join
+    public static function joins(string $second_table, string $join_condition = null, array $where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "JOIN", $select, $where); 
     }
     //innerjoin
-    public static function innerJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+    public static function innerJoins(string $second_table, $join_condition = null, $where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "INNER JOIN", $select, $where);
     }
     //left joins
-    public static function leftJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+    public static function leftJoins(string $second_table, $join_condition = null, $where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "LEFT JOIN", $select, $where);
     }
     //right joins
-    public static function rightJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+    public static function rightJoins(string $second_table, $join_condition,$where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "RIGHT JOIN", $select, $where);
     }
     //right outer joins
-    public static function rightOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+    public static function rightOuterJoins(string $second_table, $join_condition,$where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //right outer joins
-    public static function leftOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+    public static function leftOuterJoins(string $second_table, $join_condition,$where = [], string $select = '*'){
         return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //fetches all the record
@@ -395,7 +399,12 @@ class Model{
             return $this;
         }
     }
-
+    //join
+    public function fullJoin(string $second_table, string $join_condition = null){
+        $this->doJoin($second_table, $join_condition, 'FULL JOIN' );
+        return $this;
+    }
+    //join
     public function join(string $second_table, string $join_condition = null){
         $this->doJoin($second_table, $join_condition, 'JOIN' );
         return $this;
