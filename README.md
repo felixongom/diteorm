@@ -491,7 +491,7 @@ This section will teach us how to create, read, update and delete record.
 
 class BlogPost queries the tabl blog_post and ComponyActiveEmployees queries compony_active_employees
 
-Creating a new user into users table as shown below.
+If you are using autoincreamenting id from `$table->id()`, don't pass the primary key feild. Only pass primary key feild if primary key is from `$table->string(user_id)->primarykey()` or `$table->int(user_id)->unique()->notnull()`.
 
 ```php
 // creating single user
@@ -504,7 +504,7 @@ $user = User::create([
   ["user_name"=>"loy", "age"=>27],
 ]);
 ```
-Don't pass the primary key feild, created_at and updated_at feild because they get feild up automatically.
+Don't pass created_at and updated_at feild because they get feild up automatically.
 
 The create method returns the new record created only if you are creating a single record.
 

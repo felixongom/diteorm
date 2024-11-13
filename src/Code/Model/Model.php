@@ -205,7 +205,13 @@ class Model{
         $timestamp = $time_colmn_exist?'created_at, updated_at':null;
         $createdat_val = $time_colmn_exist?[date("Y-m-d h:i:s"), date("Y-m-d h:i:s")]:[];
         // 
-        $max_id = $isSqlite?self::autoincreamentId($table_name, $conn,  $isSqlite):'';
+        $max_id = null;
+        
+        if(array_key_exists(get_called_class().'_id', $data) || array_key_exists(strtolower(get_called_class().'_id'), $data)){
+            $max_id = $data[get_called_class().'_id'];
+        }else{
+            $max_id = $isSqlite?self::autoincreamentId($table_name, $conn,  $isSqlite):'';
+        }
         $values = array_values($data);// get values
         // chang the boolean values
         $qnmarks = null; 
