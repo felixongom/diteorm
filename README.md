@@ -251,8 +251,8 @@ class BlogPosts extends Model{
       $table->id();
       $table->string('title')->notnull();
       $table->string('body')->notnull();
-      $table->foreignKey('users_id')->notnull();
-      $table->foreignKey('status_id')->cascade();
+      $table->foreignkey('users_id')->notnull();
+      $table->foreignkey('status_id')->cascade();
       $table->timestamp();
     });
   }
@@ -332,7 +332,7 @@ class TeachersCourses extends Model{
 ```
 #### Meaning of each of the methods used for building the table.
 
-- **id()** - Defines an autoincrementing primary id feild and and set it not null.
+- **id()** - Defines an autoincrementing primary id feild and set it not null.
 You can not chain any method on to id().
 ```php
 $table->id();
@@ -404,83 +404,92 @@ $table->primaryKey();
   ```php
   $table->sql("CREATE TABLE IF NOT EXISTS Users ( status_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL , status INT NOT NULL , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP )");
   ```
-- **foreignKey()** -Sql foreign key field. It take name the feild being reference, no need for table name since sparkes can figure it out.
+- **primarykey()** -Sql primarykey key field..
   ```php
-  $table->foreignKey('users_id');
+  $table->string('user_id')->primarykey();
+  // OR
+  $table->int('user_id')->primarykey();
+  // OR
+  $table->int('user_id')->primarykey()->autoincrement();
+
+  ```
+- **foreignkey()** -Sql foreign key field. It take in the name of the feild being referenced and an optional type which default to `INT`. Use the same type as used in the primary key field eg `INT`, `VARCHAR`, `TEXT` or `LONGTEXT`. You only need to suply the type if you are not using type `INT` or `$table->id()` for primary key. 
+  ```php
+  $table->foreignkey('user_id' 'INT');
   ```
 
 ##### Field constrains
 
 - **notnull()** - Sql NOT NULL constrain. You can not do this on id() method..
   ```php
-  $table->foreignKey('user_id')->notnull();
+  $table->foreignkey('user_id')->notnull();
   $table->string('user_name')->notnull();
   $table->id('user_name')->notnull(); // dont do this!!
   ```
 - **unique()** -Sql UNIQUE constrain.
   ```php
-  $table->foreignKey('posts-id')->unique();
+  $table->foreignkey('posts-id')->unique();
   $table->email('user_email')->unique()->notnull();
   ```
 - **cascade()** -This is chained only on foriegn ky feilds and it is optional. Its sets ON DELETE and ON UPDATE constrian to CASCADE.
   ```php
-  $table->foreignKey('post_id')->cascades();
-  $table->foreignKey('user_id')->unique()->notnull()->cascade();
+  $table->foreignkey('post_id')->cascades();
+  $table->foreignkey('user_id')->unique()->notnull()->cascade();
   ```
 - **cascade()** -This is chained only on foriegn key feilds and it is optional. It sets ON DELETE and ON UPDATE constrian to CASCADE.
   ```php
-  $table->foreignKey('post_id')->cascades();
-  $table->foreignKey('user_id')->unique()->notnull()->cascade();
+  $table->foreignkey('post_id')->cascades();
+  $table->foreignkey('user_id')->unique()->notnull()->cascade();
   ```
 - **restrict()** - It sets ON DELETE and ON UPDATE constrian to RESTRICT.
   ```php
-  $table->foreignKey('post_id')->restrict();
+  $table->foreignkey('post_id')->restrict();
   ```
 - **setnull()** - It sets ON DELETE and ON UPDATE constrian to SET NULL.
   ```php
-  $table->foreignKey('post_id')->setnull();
+  $table->foreignkey('post_id')->setnull();
   ```
 - **noaction()** - It sets ON DELETE and ON UPDATE constrian to NO ACTION.
   ```php
-    $table->foreignKey('post_id')->noaction();
+    $table->foreignkey('post_id')->noaction();
   ```
   You can also set this costrain one by one as shown below
 - **cascadeDelete()** - It sets ON DELETE CASCADE.
   ```php
-  $table->foreignKey('post_id')->cascadeDelete();
+  $table->foreignkey('post_id')->cascadeDelete();
   ```
 - **cascadeUpdate()** - It sets ON UPDATE CASCADE.
   ```php
-  $table->foreignKey('post_id')->cascadeUpdate();
+  $table->foreignkey('post_id')->cascadeUpdate();
   ```
 - **restrictDelete()** - It sets ON DELETE RESTRICT.
   ```php
-  $table->foreignKey('post_id')->restrictDelete();
+  $table->foreignkey('post_id')->restrictDelete();
   ```
 - **restrictUpdate()** - It sets ON UPDATE RESTRICT.
   ```php
-  $table->foreignKey('post_id')->restrictUpdate();
+  $table->foreignkey('post_id')->restrictUpdate();
   ```
 - **setnullDelete()** - It sets ON DELETE SET NULL.
   ```php
-  $table->foreignKey('post_id')->setnullDelete();
+  $table->foreignkey('post_id')->setnullDelete();
   ```
 - **setnullUpdate()** - It sets ON UPDATE SET NULL.
   ```php
-  $table->foreignKey('post_id')->setnullUpdate();
+  $table->foreignkey('post_id')->setnullUpdate();
   ```
 - **noactionDelete()** - It sets ON DELETE NOACTION.
   ```php
-  $table->foreignKey('post_id')->noactionDelete();
+  $table->foreignkey('post_id')->noactionDelete();
   ```
 - **noactionUpdate()** - It sets ON UPDATE NOACTION.
   ```php
-    $table->foreignKey('post_id')->noactionUpdate();
+    $table->foreignkey('post_id')->noactionUpdate();
   ```
   Below is a very valid chain.
 
   ```php
-   $table->foreignKey('post_id')->noactionUpdate()->setnullDelete();
+   $table->foreignkey('post_id')->noactionUpdate()->setnullDelete();
   ```
 
 ## Querying the database.
@@ -491,7 +500,7 @@ This section will teach us how to create, read, update and delete record.
 
 class BlogPost queries the tabl blog_post and ComponyActiveEmployees queries compony_active_employees
 
-If you are using autoincreamenting id from `$table->id()`, don't pass the primary key feild. Only pass primary key feild if primary key is from `$table->string(user_id)->primarykey()` or `$table->int(user_id)->unique()->notnull()`.
+If you are using autoincreamenting id from `$table->id()`, don't pass the primary key feild. Only pass primary key feild if primary key is from `$table->string('user_id')->primarykey()` or `$table->int('user_id')->unique()->notnull()`.
 
 ```php
 // creating single user

@@ -177,14 +177,9 @@ class Table{
         return $this;
     }
     
-    //For integer values
-    public function check(){
-        $this->BuildColumn->Build(' UNIQUE');
-        return $this;
-    }
     //For foreign key
-    public function foreignKey(string $column_name){
-        $INT = "INT";
+    public function foreignkey(string $column_name, string $type = 'INT'){
+        $INT = $type;
         $Text  = "_*_$column_name $INT ";
         // 
         $this->BuildColumn->Build($Text);
