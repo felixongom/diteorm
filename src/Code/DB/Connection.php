@@ -167,9 +167,9 @@ class Connection
             $new_sql = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$sql:$new_sql;
             $value = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$value:null;
             echo("
-                <div style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
+                <section style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
                     $mess $new_sql $value $hr
-                </div>");
+                </section>");
         }
     }
     //
