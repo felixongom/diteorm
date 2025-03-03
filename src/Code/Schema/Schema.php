@@ -8,7 +8,7 @@ use Dite\Table\Table;
  * extetend TableBuilder from schema in order to inherit all the methods for bulding the table
  */
 class Schema extends Table{
-    public $setup = null;
+    public static $setup = null;
     public static function setup($setup){
         self::$setup = $setup;
     }
