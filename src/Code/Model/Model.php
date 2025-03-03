@@ -128,21 +128,19 @@ class Model{
         return self::sql($sql, $maker->prepared_values, false);
     }
     //fetches the last record that matches the query
-    public static function last(array $where = null, array|string $select = '*', int $limit = 1){
+    public static function last(array $where = null, array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $id_column = $maker->table_name.'_id';
-        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column DESC LIMIT $limit";
-        $return_many = $limit===1?false:true;
-        return self::sql($sql, $maker->prepared_values, $return_many);
+        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column DESC LIMIT 1";
+        return self::sql($sql, $maker->prepared_values, false);
         
     }
     //fetches the first record that matches the query
-    public static function first(array $where = null, array|string $select = '*', int $limit = 1){
+    public static function first(array $where = null, array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $id_column = $maker->table_name.'_id';
-        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column LIMIT  $limit";
-        $return_many = $limit===1?false:true;
-        return self::sql($sql, $maker->prepared_values, $return_many);
+        $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column LIMIT  1";
+        return self::sql($sql, $maker->prepared_values, false);
     }
     //delete by id
     private static function doDelete(int|string|array $where){
@@ -207,13 +205,7 @@ class Model{
         $timestamp = $time_colmn_exist?'created_at, updated_at':null;
         $createdat_val = $time_colmn_exist?[date("Y-m-d h:i:s"), date("Y-m-d h:i:s")]:[];
         // 
-        $max_id = null;
-        
-        if(array_key_exists(get_called_class().'_id', $data) || array_key_exists(strtolower(get_called_class().'_id'), $data)){
-            $max_id = $data[get_called_class().'_id'];
-        }else{
-            $max_id = $isSqlite?self::autoincreamentId($table_name, $conn,  $isSqlite):'';
-        }
+        $max_id = $isSqlite?self::autoincreamentId($table_name, $conn,  $isSqlite):'';
         $values = array_values($data);// get values
         // chang the boolean values
         $qnmarks = null; 
@@ -279,52 +271,47 @@ class Model{
 
     //Join section
     //join
-    private static function doJoins($second_table, $join_condition, $type_of_join, $select='*',$where = [], $orderby = null){
+    private static function doJoins($second_table, $join_condition, $type_of_join, $select='*',$where = []){
         $sql = null;
-        $orderby = $orderby?"ORDER BY $orderby":null;
         $maker = self::maker($where, $select);
         if($join_condition){
             $second_table = $maker->instance->renameTable($second_table);
             // 
             $join_result_string = "$type_of_join $second_table ON $join_condition "??null;
-            $sql = "SELECT $maker->star FROM $maker->table_name $join_result_string $maker->where $orderby";
+            $sql = "SELECT $maker->star FROM $maker->table_name $join_result_string $maker->where";
         }else{
             $sql = "SELECT $maker->star FROM $maker->table_name $type_of_join $second_table ON 
-            $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)} $maker->where $orderby";
+            $maker->table_name.{$maker->builder->idColName($maker->table_name)} = $second_table.{$maker->builder->idColName($maker->table_name)} $maker->where";
         }
         return self::sql($sql, $maker->prepared_values);
     }
     
     //join
-    public static function fullJoins(string $second_table, string $join_condition = null, array $where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "FULL JOIN", $select, $where, $orderby); 
-    }
-    //join
-    public static function joins(string $second_table, string $join_condition = null, array $where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "JOIN", $select, $where, $orderby); 
+    public static function joins(string $second_table, string $join_condition = null, array $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "JOIN", $select, $where); 
     }
     //innerjoin
-    public static function innerJoins(string $second_table, $join_condition = null, $where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "INNER JOIN", $select, $where, $orderby);
+    public static function innerJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "INNER JOIN", $select, $where);
     }
     //left joins
-    public static function leftJoins(string $second_table, $join_condition = null, $where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "LEFT JOIN", $select, $where, $orderby);
+    public static function leftJoins(string $second_table, $join_condition = null, $where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "LEFT JOIN", $select, $where);
     }
     //right joins
-    public static function rightJoins(string $second_table, $join_condition,$where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "RIGHT JOIN", $select, $where, $orderby);
+    public static function rightJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "RIGHT JOIN", $select, $where);
     }
     //right outer joins
-    public static function rightOuterJoins(string $second_table, $join_condition,$where = [], string $select = '*', string $orderby = null){
+    public static function rightOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
         return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //right outer joins
-    public static function leftOuterJoins(string $second_table, $join_condition,$where = [], string $select = '*', string $orderby = null){
-        return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where, $orderby);
+    public static function leftOuterJoins(string $second_table, $join_condition,$where = [], array|string $select = '*'){
+        return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //fetches all the record
-    public static function sql(string $sql, array $values = null, bool $return_many = true){
+    public static function sql(string $sql, array $values = null, $return_many = true){
         $values = null??[];
         $maker = self::maker();
         $values = $values===[]?null:$values;
@@ -408,12 +395,7 @@ class Model{
             return $this;
         }
     }
-    //join
-    public function fullJoin(string $second_table, string $join_condition = null){
-        $this->doJoin($second_table, $join_condition, 'FULL JOIN' );
-        return $this;
-    }
-    //join
+
     public function join(string $second_table, string $join_condition = null){
         $this->doJoin($second_table, $join_condition, 'JOIN' );
         return $this;
@@ -561,18 +543,18 @@ class Model{
     }
    
     //with
-    public function withOne(string $table, array $where = null, string $select = '*', string|array $orderby = null){
+    public function withOne(string $table, array $where = null, string $select = '*'){
         $with_one_table = $table;
         $with_one_where = $where;
         $with_one_select = $select;
-        $this->with_one_array = [...$this->with_one_array, [$with_one_table, $with_one_where??[], $with_one_select, $orderby]];
+        $this->with_one_array = [...$this->with_one_array, [$with_one_table, $with_one_where??[], $with_one_select]];
         return $this;
     }
-    public function withAll(string $table, array $where = null, string $select = '*', array|string $orderby = null){
+    public function withAll(string $table, array $where = null, string $select = '*'){
         $with_table = $table;
         $with_where = $where;
         $with_select = $select;
-        $this->with_array = [...$this->with_array,[$with_table, $with_where??[], $with_select, $orderby]];
+        $this->with_array = [...$this->with_array,[$with_table, $with_where??[], $with_select]];
         return $this;
     }
     public function attach(string $table, string $select = '*'){
@@ -632,11 +614,9 @@ class Model{
         $maker = self::maker($one_array[1], $one_array[2]);
         $table = $maker->instance->renameTable($one_array[0]);
         $limit = $many?null:"LIMIT 1";
-        $orderby = $one_array[3];
-        $orderby = $orderby?"ORDER BY $orderby":null;
         //custom where      
         $_where = $maker->where?str_replace("WHERE", "AND", $maker->where):null;
-        $sql = "SELECT * FROM $table WHERE $tie_to_main_table $_where $orderby $limit";
+        $sql = "SELECT * FROM $table WHERE $tie_to_main_table $_where $limit";
         // 
         $stmt = $maker->instance->connect()->prepare($sql);
         $stmt->execute($maker->prepared_values);
@@ -962,7 +942,7 @@ class Model{
         $stmt->execute($this->prepared_values);
         // Fetch the records so we can display them in our template.
         $result = $stmt->fetch(PDO::FETCH_OBJ);
-        return $result->total_count;
+        return $result->total_count??0;
     }
     // resetting somevariables
     private function resetVariables(){
