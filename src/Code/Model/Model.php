@@ -31,7 +31,6 @@ class Model{
     private static $with_least = false;
     private static $without = false;
     // 
-    private static $calculated = null;
     private static $sql_with_most = null; 
     private $prepared_values = [];
     private $select = '*';
@@ -104,7 +103,7 @@ class Model{
         }
     }
     //fetches all the record
-     public static function all(array $where = null, array|string $select = '*'){
+     public static function all(array $where, array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where";
         return self::sql($sql, $maker->prepared_values);
@@ -744,13 +743,6 @@ class Model{
         self::$without = true;
         return self::withMost($table_name);
     }
-    
-    // 
-    public function calc(string $calculated_field = ''){
-        self::$calculated = "$calculated_field AS calculated";
-        return $this;
-    }
-
     // *************************************************************************************
 
     // binging everything comes together
@@ -758,12 +750,6 @@ class Model{
         $self_limit = self::$limit;
         $self_skip = self::$skip;
         $maker = self::maker([]);
-        
-        // doing calculated field for with most and without 
-        if(self::$calculated){
-            $calculated_field_query = str_replace("FROM", ', '.self::$calculated.' FROM ', self::$sql_with_most);
-            self::$sql_with_most = str_replace("BY total_count", 'calculated', $calculated_field_query);
-        }
         //  
         if($this->activate_findby_pk && !($this->sql_hasmany || $this->sql_hasone || $this->sql_belongs_to || $this->sql_has_many_through || $this->sql_blongs_to_many)){// it returns the array found bypk
             $maker = self::maker($this->id_for_one_record);
@@ -814,9 +800,9 @@ class Model{
             }else{
                 $this->sql = "SELECT $this->select FROM $this->table_name $this->join_result_string $this->where";
                 //without
-
                 
                 if(self::$without && self::$sql_with_most){
+                    
                     $ids = [];
                     $response = self::sql(self::$sql_with_most);
                     foreach ($response as $each_res) {
@@ -830,7 +816,6 @@ class Model{
                     $sql = "SELECT * FROM $this->table_name WHERE $id_column NOT IN ($csv_ids) $_where"; 
                     $this->sql = str_replace("*", $this->select, $sql);
                 }
-                
             }
             //    
             $total_count = $this->countTotal(str_replace('*', "COUNT(*) AS total_count", $this->sql));
@@ -841,18 +826,8 @@ class Model{
             // **************************************************************************************
             // with most and with least
             if(self::$sql_with_most && !self::$without){
-                $limit = null;
+                $limit = (self::$limit >0)?" LIMIT ".self::$limit:null;
                 // 
-                if(!self::$limit && self::$skip==0){
-                    $limit = null;
-                }else{
-                    $DRIVER = $maker->instance->env()["DRIVER"];
-                    if($DRIVER === "postgresql"){
-                        $limit.= " LIMIT $self_limit  OFFSET $self_skip";
-                    }else{
-                        $limit.= " LIMIT $self_skip, $self_limit";   
-                    }
-                }
                 $sql = self::$sql_with_most.$limit;
                 $response = self::sql($sql);
                 // extract the table_id from the
@@ -890,13 +865,13 @@ class Model{
                 $limit = self::$limit;
                 //             
                 if($DRIVER === "postgresql"){
-                    $this->sql.= " LIMIT $limit  OFFSET $skip";
+                    $this->sql.= " LIMIT $skip OFFSET $limit";
                 }else{
                     $this->sql.= " LIMIT $skip, $limit";   
                 }
             }elseif($this->activate_find && self::$limit && !self::$sql_with_most){
                 if($DRIVER === "postgresql"){
-                    $this->sql.= " LIMIT $self_limit  OFFSET $self_skip";
+                    $this->sql.= " LIMIT $self_skip OFFSET $self_limit";
                 }else{
                     $this->sql.= " LIMIT $self_skip, $self_limit";   
                 }
@@ -967,7 +942,7 @@ class Model{
         $stmt->execute($this->prepared_values);
         // Fetch the records so we can display them in our template.
         $result = $stmt->fetch(PDO::FETCH_OBJ);
-        return $result->total_count??0;
+        return $result->total_count;
     }
     // resetting somevariables
     private function resetVariables(){

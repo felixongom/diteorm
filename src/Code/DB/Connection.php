@@ -6,8 +6,8 @@ use PDOException;
 class Connection
 {
     private $env = [];
-    public function __construct($setup = null){
-        $this->env = $setup?:parse_ini_file('.env');
+    public function __construct(){
+        $this->env = parse_ini_file('.env');
     }
 
     //connection
@@ -138,7 +138,7 @@ class Connection
     }
 
     //debarg print
-    public  function debargPrint(string $SQL=null , array|string $PREPARED_VALUE=null, $messege=null, bool $many = false){
+    public  function debargPrint($SQL=null , $PREPARED_VALUE=null, $messege=null, bool $many = false){
         if(array_key_exists('IS_DEVMODE', $this->env) && $this->env['IS_DEVMODE']==1){
             $val =  json_encode($PREPARED_VALUE);
             $check_many = $many ?$val:"[$val]";
@@ -167,9 +167,9 @@ class Connection
             $new_sql = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$sql:$new_sql;
             $value = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$value:null;
             echo("
-                <section style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
+                <div style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
                     $mess $new_sql $value $hr
-                </section>");
+                </div>");
         }
     }
     //

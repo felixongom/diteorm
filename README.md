@@ -3,7 +3,7 @@
 This is PHP ORM for interacting with relational databases. It supports only Sqlite, Mysql, Sqlserver and Postgresql databases.
 It allows us to keep oursevles within only PHP code instead of switching between sql and PHP code.
 ### Features of dite-orm.
-Dite-orm is too close to SQL. It can easily help to interact with the database quickly and you get everything you need in one line of code. 
+Dite-orm is to close to SQL. It can easily help to ineract with the database quickly and you get everything you need in one line of code. 
 - Supports multiple DBMS.
 - Configuration settings can be added directly into the .env file or using the setup method, but not both.
 - Uses PDO in the background.
@@ -15,7 +15,7 @@ Dite-orm is too close to SQL. It can easily help to interact with the database q
 - Printing out the query that are running to produce the records given out.
 - Provision for writing raw SQL.
 - Schema for creating tables and their fields using the correct datatype customizeable to meet you needs.
-- Table name being queried matches the class name quering it. It can also allow for passing table name using DB::table().
+- Table name being queried matches the class name quering it. It can also alow for passing table name using DB::table().
  
 - And many more. 
 
@@ -75,7 +75,7 @@ RUN_SCHEMA = 1
   - mysql
   - sqlsever 
   - postgresql or pgsql
-- **SERVER_NAME** is the server name or port for example 'localhost' or 3605.
+- **SERVER_NAME** is the server name or port for example 'localhost' of 3605.
 - **USER_NAME** is the username e.g. example 'root'.
 
 - **DATABASE_PASSWORD** is the password of the database example '23R42'.
@@ -107,14 +107,14 @@ $user->name; //tom
 $user->age; //36
 ```
   - **SQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default purple color.
-  - **NONSQL_COLOR** definds the color of non sql keywords when printing to the screen. It has a default whitish color.
-  - **SQL_BG** definds the background color of the sql being printed on screen in dev mode. The default is black.
+  - **NONSQL_COLOR** definds the color of sql keywords when printing to the screen. It has a default whitish color.
+  - **SQL_BG** definds the background color of the sql peing printed on screen in dev mode. The default is black.
   - **FULL_SQL** It can allow you to see the prepared sql and the value with which it will be executed.
-  0 to turn it on or 1 to turn it off. If it is not added , it defaults to full sql being written.
+  FULL_0 to turn it on or FULL_1 to turn it off. If it is not added , it defaults to full sql being written.
   
-  ***NOTE:*** All colour codes are defind in the .env file as :fff but not #fff (Use `:` but not `#`)
+  ***NOTE:*** All colour codes are defind in the .env file as :fff but not #fff (Use he colon but not #)
 
-**Alternative way of creating connection to the database**
+<!-- **Alternative way of creating connection to the database**
 Incase you don't want to add all the connetion details directly to the .env file, use the static method ,**setup()** which is on both Model and Schema from dite. This method take in an array of configuration setup
 
 ```php
@@ -138,30 +138,30 @@ Incase you don't want to add all the connetion details directly to the .env file
   'APP_PASSWORD' => 'rqae hrue bili alru',
   'IS_DEVMODE' => 1,
   'SQL_COLOR' => ':3f2',
-  'NONSQL_COLOR' => ':f3fb',
-  'SQL_BG' => 'red',
-  'SEPARATOR' =>'white'
+  'NONSQL_COLOR' = ':f3fb',
+  'SQL_BG' = 'red',
+  'SEPARATOR' = 'white'
 ]);
-```
+``` -->
 
 ## Creating tables.
 
 - Using Dite Schema.
-- Using existing database / Using other softwares (mysql workbench, navycat, DB browser, etc. ) to create. 
+- Using existing database / Using other software (mysql workbench, navycat, DB browser, etc. ) to create. 
 
-**1. Using existing database or other softwares to create the database.**
+**1. Using existing database or other software to create the database.**
 
 When using other software like myql workbench or PHPmyadmin, all you need to care about is the primary key field.
 Primary key field name is got from the name of the table written in lowercase. ie
-- **Users** pk fieldl be **users_id**
-- **BlogPost** pk fieldl be **blog_post_id**
-- **Blog_post** pk fieldl be **blog_post_id**
-- **Prices** pk fieldl be **Prices_id**
+- **Users** pk feild will be **users_id**
+- **BlogPost** pk feild will be **blog_post_id**
+- **Blog_post** pk feild will be **blog_post_id**
+- **Prices** pk feild will be **Prices_id**
 
 **Note::** Uppercase letter in the middle of the name result into underscore before the uppercase letter.
 
 #### Creating connetion to db.
-Add connection to the database direct to the .env or use the setup method to add connection.
+Add connection to the database direct to the .env.
 Then the model classes(representing each table) are defined like below.
 
 
@@ -170,15 +170,6 @@ use Dite\Model\Model;
 require_once "path/to/vendor/autoload.php";
 
 class DB extends Model{
-  public function __constructor(){
-    self::setup([
-      'DRIVER' => 'sqlite',
-      'DATABASE_NAME' => 'schooldb',
-      'RUN_SCHEMA' => 1,
-      'LOGGER' => 1,
-      'SQL_COLOR' => ':3f2',
-    ]);
-  }
 }
 
 //users
@@ -251,8 +242,8 @@ class BlogPosts extends Model{
       $table->id();
       $table->string('title')->notnull();
       $table->string('body')->notnull();
-      $table->foreignkey('users_id')->notnull();
-      $table->foreignkey('status_id')->cascade();
+      $table->foreignKey('users_id')->notnull();
+      $table->foreignKey('status_id')->cascade();
       $table->timestamp();
     });
   }
@@ -277,7 +268,7 @@ $posts = new BlogPosts()
 
 **_Note:_**
 
-- We have instantiated the classes starting with Status.This is because the status table is being referenced by Posts in the foreign key fielded and the table have to be created first before its is referenced.**Tables that are being reference must be above**.
+- We have instantiated the classes starting with Status.This is because the status table is being referenced by Posts in the foreign key fieled and the table have to be created first before its is referenced.**Tables that are being reference must be above**.
   If you change the order like below, you will get a foriegn key error mostly in mysql.
 
 ```php
@@ -295,7 +286,7 @@ After the tables has bean created, You can open .env and change RUN_SCHEMA = 0 o
 #### 1. Creating an intermidate table.
 
 The intemediate table has a convention of creating it inorder for **Dite** to understand. You have to concatenate the two table names.
-For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** or **TeachersCourses::class** and the primary key fieldl be **teachers_courses_id** . The intermediate table must be created like below.
+For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** or **TeachersCourses::class** and the primary key feild will be **teachers_courses_id** . The intermediate table must be created like below.
 ```php
 //Teachers table
 class Teachers extends Model{
@@ -332,17 +323,17 @@ class TeachersCourses extends Model{
 ```
 #### Meaning of each of the methods used for building the table.
 
-- **id()** - Defines an autoincrementing primary id field set it not null.
+- **id()** - Defines an autoincrementing primary id feild and and set it not null.
 You can not chain any method on to id().
 ```php
 $table->id();
 ```
 
-- **primarykey()** - Defines primay key field
+- **primaryKey()** - Defines primay key feild.
 ```php
 $table->primaryKey();
 ```
-- **string()** -Sql varchar field takes in two parameter, one mandatory string parameter(field name like comments), second optional integers parameter which defaults to 255 (max length of the charactors accepted).
+- **string()** -Sql varchar feild. It takes in two parameter, one mandatory string parameter(field name like comments), second optional integers parameter which defaults to 255 (max length of the charactors accepted).
   ```php
   $table->string('name');
   //OR
@@ -404,92 +395,83 @@ $table->primaryKey();
   ```php
   $table->sql("CREATE TABLE IF NOT EXISTS Users ( status_id INT AUTO_INCREMENT PRIMARY KEY NOT NULL , status INT NOT NULL , created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP )");
   ```
-- **primarykey()** -Sql primarykey key field..
+- **foreignKey()** -Sql foreign key field. It take name the feild being reference, no need for table name since sparkes can figure it out.
   ```php
-  $table->string('user_id')->primarykey();
-  // OR
-  $table->int('user_id')->primarykey();
-  // OR
-  $table->int('user_id')->primarykey()->autoincrement();
-
-  ```
-- **foreignkey()** -Sql foreign key field. It take in the name of the fieldng referenced and an optional type which default to `INT`. Use the same type as used in the primary key field eg `INT`, `VARCHAR`, `TEXT` or `LONGTEXT`. You only need to suply the type if you are not using type `INT` or `$table->id()` for primary key. 
-  ```php
-  $table->foreignkey('user_id' 'INT');
+  $table->foreignKey('users_id');
   ```
 
 ##### Field constrains
 
 - **notnull()** - Sql NOT NULL constrain. You can not do this on id() method..
   ```php
-  $table->foreignkey('user_id')->notnull();
+  $table->foreignKey('user_id')->notnull();
   $table->string('user_name')->notnull();
   $table->id('user_name')->notnull(); // dont do this!!
   ```
 - **unique()** -Sql UNIQUE constrain.
   ```php
-  $table->foreignkey('posts-id')->unique();
+  $table->foreignKey('posts-id')->unique();
   $table->email('user_email')->unique()->notnull();
   ```
-- **cascade()** -This is chained only on foriegn ky field it is optional. Its sets ON DELETE and ON UPDATE constrian to CASCADE.
+- **cascade()** -This is chained only on foriegn ky feilds and it is optional. Its sets ON DELETE and ON UPDATE constrian to CASCADE.
   ```php
-  $table->foreignkey('post_id')->cascades();
-  $table->foreignkey('user_id')->unique()->notnull()->cascade();
+  $table->foreignKey('post_id')->cascades();
+  $table->foreignKey('user_id')->unique()->notnull()->cascade();
   ```
-- **cascade()** -This is chained only on foriegn key field it is optional. It sets ON DELETE and ON UPDATE constrian to CASCADE.
+- **cascade()** -This is chained only on foriegn key feilds and it is optional. It sets ON DELETE and ON UPDATE constrian to CASCADE.
   ```php
-  $table->foreignkey('post_id')->cascades();
-  $table->foreignkey('user_id')->unique()->notnull()->cascade();
+  $table->foreignKey('post_id')->cascades();
+  $table->foreignKey('user_id')->unique()->notnull()->cascade();
   ```
 - **restrict()** - It sets ON DELETE and ON UPDATE constrian to RESTRICT.
   ```php
-  $table->foreignkey('post_id')->restrict();
+  $table->foreignKey('post_id')->restrict();
   ```
 - **setnull()** - It sets ON DELETE and ON UPDATE constrian to SET NULL.
   ```php
-  $table->foreignkey('post_id')->setnull();
+  $table->foreignKey('post_id')->setnull();
   ```
 - **noaction()** - It sets ON DELETE and ON UPDATE constrian to NO ACTION.
   ```php
-    $table->foreignkey('post_id')->noaction();
+    $table->foreignKey('post_id')->noaction();
   ```
   You can also set this costrain one by one as shown below
 - **cascadeDelete()** - It sets ON DELETE CASCADE.
   ```php
-  $table->foreignkey('post_id')->cascadeDelete();
+  $table->foreignKey('post_id')->cascadeDelete();
   ```
 - **cascadeUpdate()** - It sets ON UPDATE CASCADE.
   ```php
-  $table->foreignkey('post_id')->cascadeUpdate();
+  $table->foreignKey('post_id')->cascadeUpdate();
   ```
 - **restrictDelete()** - It sets ON DELETE RESTRICT.
   ```php
-  $table->foreignkey('post_id')->restrictDelete();
+  $table->foreignKey('post_id')->restrictDelete();
   ```
 - **restrictUpdate()** - It sets ON UPDATE RESTRICT.
   ```php
-  $table->foreignkey('post_id')->restrictUpdate();
+  $table->foreignKey('post_id')->restrictUpdate();
   ```
 - **setnullDelete()** - It sets ON DELETE SET NULL.
   ```php
-  $table->foreignkey('post_id')->setnullDelete();
+  $table->foreignKey('post_id')->setnullDelete();
   ```
 - **setnullUpdate()** - It sets ON UPDATE SET NULL.
   ```php
-  $table->foreignkey('post_id')->setnullUpdate();
+  $table->foreignKey('post_id')->setnullUpdate();
   ```
 - **noactionDelete()** - It sets ON DELETE NOACTION.
   ```php
-  $table->foreignkey('post_id')->noactionDelete();
+  $table->foreignKey('post_id')->noactionDelete();
   ```
 - **noactionUpdate()** - It sets ON UPDATE NOACTION.
   ```php
-    $table->foreignkey('post_id')->noactionUpdate();
+    $table->foreignKey('post_id')->noactionUpdate();
   ```
   Below is a very valid chain.
 
   ```php
-   $table->foreignkey('post_id')->noactionUpdate()->setnullDelete();
+   $table->foreignKey('post_id')->noactionUpdate()->setnullDelete();
   ```
 
 ## Querying the database.
@@ -500,7 +482,7 @@ This section will teach us how to create, read, update and delete record.
 
 class BlogPost queries the tabl blog_post and ComponyActiveEmployees queries compony_active_employees
 
-If you are using autoincreamenting id from `$table->id()`, don't pass the primary key fieldly pass primary key fieldprimary key is from `$table->string('user_id')->primarykey()` or `$table->int('user_id')->unique()->notnull()`.
+Creating a new user into users table as shown below.
 
 ```php
 // creating single user
@@ -513,7 +495,7 @@ $user = User::create([
   ["user_name"=>"loy", "age"=>27],
 ]);
 ```
-Don't pass created_at and updated_at fieldause they get fieldautomatically.
+Don't pass the primary key feild, created_at and updated_at feild because they get feild up automatically.
 
 The create method returns the new record created only if you are creating a single record.
 
@@ -566,8 +548,8 @@ $user = User::countRows(["user_name"=>"tom", "age" => 30]);
 ### Reading records from the database.
 
 This can be done using many methods which are all discussed below.
-All static methods that are used for reading records without chaining functionality takes in atleast two optional parameters, the where clause array / int and the fieldu want back.
-The fields you want back can be passed as comma separated string value of the columns you want back **OR** as an array of all the fieldu want back. As shown below
+All static methods that are used for reading records without chaining functionality takes in atleast two optional parameters, the where clause array / int and the feilds you want back.
+The fields you want back can be passed as comma separated string value of the columns you want back **OR** as an array of all the feilds you want back. As shown below
  ```php
 //get all the records from the table user
 $user = User::all(null, 'name, email');
@@ -596,8 +578,8 @@ $user = User::all(["age"=>[":gt"=>30]]);
 //get all the records from the table user
 $user = User::first();
 
-//get the first or first 5 record limited from the  user table where age >  30
-$user = User::first(["age"=>[":gt"=>30]], 'name, age',5);
+//get the first records from the  user table where age >  30
+$user = User::first(["age"=>[":gt"=>30]]);
 ```
 
 - #### last().
@@ -660,12 +642,12 @@ $user = User::sql("SELECT * FROM users");
 $user = User::sql("SELECT * FROM users", []);
 $user = User::sql("SELECT * FROM users WHERE user_name = ? And age > ?", ['tom', 30]);
 ```
-## joins
+## join
 
-There are several ways of joining tables. All joins method takes in three parameter, table name, an optional join condition, optional where clause and optional select. Dite will try set its own join conditon as below if the condition is not pased.
+There are several ways of joining two tables. All join method takes in two parameter, table name and an optional join condition. Dite will try set its own join conditon as below if the condition is not pased.
 "first_table.first_table_id = second_table.first_table_id"
 ```php
-$user = User::joins(Post::class, "user.user_id = post.user_id", $orderby = "name ASC|DESC", $select = 'user.name, post.title');
+$user = User::joins(Post::class, "user.user_id = post.user_id");
 ```
 - #### joins() and innerJoins().
 This two methods do the same thing , they will inner join the two the tables.
@@ -679,7 +661,6 @@ $user = User::joins("Post");
 
 There are methods for other type of joins.
 
-- **fullJoins()**
 - **leftJoins()**
 - **rightJoins()** 
 - **innerJoins()** 
@@ -704,7 +685,7 @@ There are few more methods you can chain onto the method find() as described bel
 
 ##### orderBy().
 
-Will sort the result in descending or asscending order .
+Will sort the result in descending or asscending order . The values can be asc or desc for ascending and descending order respectively.
 
 ```php
 $users = User::find()->orderBy("user_id, name ASC, created_at DESC")->get();
@@ -718,7 +699,7 @@ $user =  User::find()->orderBy(['user_id'=> 'asc', 'name'=>'desc'])->get();
 
 ##### groupBy()
 
-This will group the result by the suplied fieldoupBy() takes in a string parameter. 
+This will group the result by the suplied feild. groupBy() takes in a string parameter. 
 
 ```php
 
@@ -734,7 +715,7 @@ $user =  User::find()->groupBy('username')->get();
 
 ##### select().
 
-This will select only the spacified fieldhe parameter is either string or arrays.
+This will select only the spacified feilds. The parameter is either string or arrays.
 
 ```php
 $users =  User::find()->select(['name', 'age'])->get();
@@ -802,7 +783,7 @@ The above query will return something like below
   'prev_page' => 1; //what next page is, null for no next page
   'per_page' => 10; //number of records per page
   'position' => 1; //position of the first record of a page in the entire result
-  'data' => [...]; // records for each page
+  'data' = [...]; // records for each page
 ]
 ```
 
@@ -814,7 +795,7 @@ Pass the name of the table to the model constrctor if you want to query using th
   // OR
   $Posts = Model::table('Post')->get();
   // 
-  $users = DB::table('user')->select('name')->get();
+  $users = DB::table('user')->select('name')->get()
   // find
   $users = Model::table('user')
           ->limit(10)
@@ -847,17 +828,17 @@ $user = DB::table('user')::findById(4);
 There are other chaining methods.
 
 ##### - withAll()
-It takes in three parameters; table name , optional where clause and selected field
+It takes in three parameters; table name , optional where clause and selected feilds. 
 It will add all the results from the second table keeping the id of the record in the first table. E.g.
 It retrieve the user or users with all their posts. Works in a one to one and one to many relationship.
 
 ```php
 $user = User::find()
-        ->withAll(Post::class, ['status'=>'active'],'title', 'title DESC')
+        ->withAll(Post::class, ['status'=>'active'],'username, age')
         ->get();
 // 
 $user = User::find(5)
-        ->withAll(Post::class, ['status'=>'active'], 'title', 'title DESC')
+        ->withAll(Post::class, ['status'=>'active'],'username, age')
         ->get();
 
 //You can chain it many time like
@@ -869,7 +850,7 @@ $user = Product::find(5)
 ```
 
 ##### - withOne()
-It takes in three parameters; table name , optional where clause and selected field
+It takes in three parameters; table name , optional where clause and selected feilds.
 It will add one result from the second table keeping the id of the record in the first table. E.g. It retrieve the user or users with one of thier posts. 
 Works in a one to one and one to many relationship.
 ```php
@@ -893,15 +874,14 @@ $user = Product::find(5)
 ```
 
 ##### - attach()
-It takes in three parameters; table name, optional where clause and selected field
-It will add all the results from the second second whose id is in the first table. E.g.
+It takes in three parameters; table name, optional where clause and selected feilds. 
+It will add all the results from the second whose id is in the first table. E.g.
 It retrieve the post or posts with person who posted it. Works in a one to one relationship.
 ```php
 $user = Post::find()
         ->attach(User::class)
         ->get();
 //Returns posts together with the user wo posted it. 
-
 $user = Post::find()
         ->attach(User::class)
         ->attach(Department::class)
@@ -948,7 +928,7 @@ $user = User::withOut(Post::class)
 //Returns users that has no post. 
 ```
 ##### withThrough()
-It takes in three parameters; table name,where and select. It retrieves teaches with the subjects they teach. This happens in a many to many relationship.
+It takes in three parameters; table name,where and select. It retrieves teaches withe the subjects they teach. This happens in a many to many relationship.
 ```php
 $user = Teacher::find()
         ->withThrough(Course::class,['status'=>1], 'coures_name, course_id')
@@ -969,7 +949,6 @@ $user = Course::find()
 Earlier we looked at joins but we were able to join only two tables using the static methods, now lets join more than two tabes.
 These are the different types of joins which are avaiable;
 
-- fullJoin() 
 - join() 
 - innerJoin()
 - leftJoin()
@@ -1025,7 +1004,7 @@ You can also chain the where() method on the following methods
 
 ##### 1. Passing an integer.
 
-When you pass an integer to methods like **findById()** or **delete()**, the integer is primary id of the record you will get back.
+When you pass an integer to methods like **findById()** or **delete()**, the integer is primary id of the of the record you will get back.
 
 ```php
 $result = User::findById(2);
@@ -1066,7 +1045,7 @@ Sometimes you want to apply operators like <, >, <=, >=, =, like, etc. this is d
     ]);
    //OR
    $result = User::all([
-       "email"=>"tom@gmail.com",
+       "email"=>"tom@gmail.com"
        "user_id"=>[':lt'=>5],
        "age"=>[':gt'=>30],
     ]);
@@ -1294,7 +1273,7 @@ $Post = Post::find(4)
 
 This will only work if you had created an intermediate table for the two tables.
 The intemediate table has a convention of creating it inorder for **Dite** to understand. You have to concatenate the two table names.
-For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** and the primary key fieldl be **teachers_courses_id** .The intermediate tabble must be created like below.
+For example **teachers** and **courses** tables, the intermediate table will be **teachers_courses** and the primary key feild will be **teachers_courses_id** .The intermediate tabble must be created like below.
 ```php
 //Teachers table
 class Teachers extends Model{

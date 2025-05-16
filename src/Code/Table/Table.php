@@ -17,10 +17,10 @@ class Table{
     Protected $conn;
     Protected $sqlite_engeine = false;
 
-    public function __construct($table_name='', $setup){
+    public function __construct($table_name=''){
         $this->table_name = strtolower($table_name);
         $this->BuildColumn = new FieldBuilder(); 
-        $this->conn = new Connection($setup);
+        $this->conn = new Connection();
     }
   //Running the query
     public function migreate(){
@@ -147,7 +147,7 @@ class Table{
         return $this;
     }
     //Year
-    public function year(int $name){
+    public function year(string $name){
         $Text  = "_*_{$this->conn->renameTable($name)} YEAR";
         $this->BuildColumn->Build($Text);
         return $this;
@@ -177,9 +177,14 @@ class Table{
         return $this;
     }
     
+    //For integer values
+    public function check(){
+        $this->BuildColumn->Build(' UNIQUE');
+        return $this;
+    }
     //For foreign key
-    public function foreignkey(string $column_name, string $type = 'INT'){
-        $INT = $type;
+    public function foreignKey(string $column_name){
+        $INT = "INT";
         $Text  = "_*_$column_name $INT ";
         // 
         $this->BuildColumn->Build($Text);
