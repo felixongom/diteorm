@@ -25,7 +25,7 @@ class Table{
   //Running the query
     public function migreate(){
         $this->_string = $this->BuildColumn->getBuild();
-        $constriain = $this->BuildColumn->getBuildRef();
+        $constriain = $this->BuildColumn->forien_key_constrain;
         // 
         $this->SQL = str_ireplace('_*_',' , ',  "CREATE TABLE IF NOT EXISTS $this->table_name (
             $this->_id 
@@ -35,6 +35,7 @@ class Table{
         )");
         //connections
         try {
+
             $this->conn->connect()->exec($this->SQL);
             $messege = "Table $this->table_name created successfully\n<br>";
             $this->conn->debargPrint($this->SQL, null, $messege);
@@ -190,92 +191,105 @@ class Table{
         $this->BuildColumn->Build($Text);
         $refernce_table = str_replace("_id", "", $column_name);
         $Ref_Text = ", FOREIGN KEY ($column_name) REFERENCES $refernce_table ($column_name)";
+        // 
         $this->BuildColumn->BuildRef($Ref_Text);
         return $this;
     }
 
     //For cascade
     public function cascade(){
-        $Text = " ON DELETE CASCADE ON UPDATE CASCADE";
-        $this->BuildColumn->BuildRef($Text);
+        $ConstrainText = " ON DELETE CASCADE ON UPDATE CASCADE";
+        // 
+        $this->BuildColumn->BuildOnFk($ConstrainText);
         return $this;
     }
     //For cascade  on delete
     public function cascadeDelete(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE CASCADE ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildOnFk($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For cascade  on UPDATE
     public function cascadeUpdate(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON UPDATE CASCADE ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For restrict
     public function restrict(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE RESTRICT ON UPDATE RESTRICT ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
 
         return $this;
     }
     //For restrict
     public function restrictDelete(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE RESTRICT ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For restrict
     public function restrictUpdate(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON UPDATE RESTRICT ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function setnull(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE SET NULL ON UPDATE SET NULL ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function setnullDelete(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE SET NULL ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function setnullUpdate(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON UPDATE SET NULL";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function noaction(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE NO ACTION ON UPDATE NO ACTION";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function noactionDelete(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON DELETE NO ACTION ";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //For set null
     public function noactionUpdate(){
-        $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
         $Text = " ON UPDATE NO ACTION";
-        $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+         // $sqlite_engeine = $this->conn->env()['DRIVER']===trim('sqlite');
+        // $sqlite_engeine?$this->BuildColumn->BuildRef($Text):$this->BuildColumn->Build($Text);
+        $this->BuildColumn->BuildOnFk($Text);
         return $this;
     }
     //Setting up timestamp

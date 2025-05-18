@@ -140,6 +140,7 @@ class Connection
     //debarg print
     public  function debargPrint($SQL=null , $PREPARED_VALUE=null, $messege=null, bool $many = false){
         if(array_key_exists('IS_DEVMODE', $this->env) && $this->env['IS_DEVMODE']==1){
+            
             $val =  json_encode($PREPARED_VALUE);
             $check_many = $many ?$val:"[$val]";
             $sql = $SQL===null?'':"<div style='margin:0;'>sql = {$this->colorfullSql($SQL,'SQL_COLOR','#cc00cc')}<div> <br>";
@@ -151,6 +152,7 @@ class Connection
             // 
             $nonsql_color = $this->setColor('NONSQL_COLOR', '#cccccc');
             $color_bg = $this->setColor('SQL_BG', '#011222');
+            
             //
             $new_sql = '';
             
@@ -165,10 +167,11 @@ class Connection
                 }
             }
             $new_sql = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$sql:$new_sql;
+           
             $value = (array_key_exists('FULL_SQL', $this->env) && $this->env['FULL_SQL']==0)?$value:null;
             echo("
-                <div style='font-size:15px; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:0; font-family:tahoma'>
-                    $mess $new_sql $value $hr
+                <div style='font-size:15px; margin:0 auto; background-color: $color_bg; color:$nonsql_color; padding:5px;margin:-5px; font-family:tahoma'>
+                    $mess $sql $value $hr
                 </div>");
         }
     }
@@ -194,6 +197,7 @@ class Connection
         }else{
             $color = $default_color;
         }
+
         return $color;
     }
 }
