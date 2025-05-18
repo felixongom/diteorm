@@ -1239,7 +1239,7 @@ There are three types of relationships you can use here,
 #### 1. One To One relationship.
 
 One user has one credit card and a credit card belongs to one user.
-To establish a **One To One relationship** here , you have to create one function in the Users class and CreditCards calss defination as shonw below.
+To establish a **One To One relationship** here , you have to create one function in the Users class and CreditCards class defination as shonw below.
 
 ```php
  $card = User::find(4)

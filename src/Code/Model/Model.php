@@ -122,13 +122,13 @@ class Model{
         
     }
     //fatches on record that matches the query
-    public static function findOne(array $where = null, array|string $select = '*'){
+    public static function findOne(array $where = [], array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where LIMIT 1";
         return self::sql($sql, $maker->prepared_values, false);
     }
     //fetches the last record that matches the query
-    public static function last(array $where = null, array|string $select = '*'){
+    public static function last(array $where = [], array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $id_column = $maker->table_name.'_id';
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column DESC LIMIT 1";
@@ -136,7 +136,7 @@ class Model{
         
     }
     //fetches the first record that matches the query
-    public static function first(array $where = null, array|string $select = '*'){
+    public static function first(array $where = [], array|string $select = '*'){
         $maker = self::maker($where??null, $select);
         $id_column = $maker->table_name.'_id';
         $sql = "SELECT $maker->star FROM $maker->table_name $maker->where ORDER BY $id_column LIMIT  1";
@@ -287,7 +287,7 @@ class Model{
     }
     
     //join
-    public static function joins(string $second_table, string $join_condition = null, array $where = [], array|string $select = '*'){
+    public static function joins(string $second_table, string $join_condition = '', array $where = [], array|string $select = '*'){
         return self::doJoins($second_table, $join_condition, "JOIN", $select, $where); 
     }
     //innerjoin
@@ -311,7 +311,7 @@ class Model{
         return self::doJoins($second_table, $join_condition, "RIGHT OUTER JOIN", $select, $where);
     }
     //fetches all the record
-    public static function sql(string $sql, array $values = null, $return_many = true){
+    public static function sql(string $sql, array $values = [], $return_many = true){
         $values = null??[];
         $maker = self::maker();
         $values = $values===[]?null:$values;
@@ -375,7 +375,7 @@ class Model{
     // ******************************************************************************************
     
     //do join
-    private function doJoin(string $second_table, string $join_condition = null , $type_of_join = "INNER JOIN"){
+    private function doJoin(string $second_table, string $join_condition = '' , $type_of_join = "INNER JOIN"){
        $second_table = strtolower($second_table);
         if($join_condition){
             $this->join_result_string .= "$type_of_join $second_table ON $join_condition "??null;
@@ -396,37 +396,37 @@ class Model{
         }
     }
 
-    public function join(string $second_table, string $join_condition = null){
+    public function join(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'JOIN' );
         return $this;
     }
     //inner join
-    public function innerJoin(string $second_table, string $join_condition = null){
+    public function innerJoin(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'INNER JOIN');
         return $this;
     }
     //LEFT OUTER JOIN
-    public function letftOuterJoin(string $second_table,string $join_condition = null){
+    public function letftOuterJoin(string $second_table,string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'LEFT OUTER JOIN');
         return $this;
     }
     //right outer join
-    public function rightOuterJoin(string $second_table, string $join_condition = null){
+    public function rightOuterJoin(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'RIGHT OUTER JOIN' );
         return $this;
     }
     //left OUTER join
-    public function leftOuterJoin(string $second_table, string $join_condition = null){
+    public function leftOuterJoin(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'LEFT OUTER JOIN');
         return $this;
     }
     //inner join
-    public function rightJoin(string $second_table, string $join_condition = null){
+    public function rightJoin(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'RIGHT JOIN');
         return $this;
     }
     //left join
-    public function leftJoin(string $second_table, string $join_condition = null){
+    public function leftJoin(string $second_table, string $join_condition = ''){
         $this->doJoin($second_table, $join_condition, 'LEFT JOIN');
         return $this;
     }
@@ -543,14 +543,14 @@ class Model{
     }
    
     //with
-    public function withOne(string $table, array $where = null, string $select = '*'){
+    public function withOne(string $table, array $where, string $select = '*'){
         $with_one_table = $table;
         $with_one_where = $where;
         $with_one_select = $select;
         $this->with_one_array = [...$this->with_one_array, [$with_one_table, $with_one_where??[], $with_one_select]];
         return $this;
     }
-    public function withAll(string $table, array $where = null, string $select = '*'){
+    public function withAll(string $table, array $where, string $select = '*'){
         $with_table = $table;
         $with_where = $where;
         $with_select = $select;
@@ -655,7 +655,7 @@ class Model{
             $where = $table."_id = ".$result[$table."_id"];
             //
             $sql = "SELECT $one_array[1] FROM $table WHERE $where LIMIT 1";
-            $result[$table] = self::sql($sql, null, false);
+            $result[$table] = self::sql($sql, [], false);
         }
         return $result;
     }
@@ -837,7 +837,7 @@ class Model{
                         // 
                         $main_table = $this->table_name."_id";
                         $each_sql = $this->sql." WHERE $main_table = ".$each_res['table_id'];
-                        $one = self::sql($each_sql,null,false);
+                        $one = self::sql($each_sql,[],false);
                         $this->with_most_data = [...$this->with_most_data, $one];
                     }
                 }
